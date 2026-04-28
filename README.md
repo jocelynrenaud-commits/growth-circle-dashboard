@@ -2,12 +2,12 @@
 
 An institutional-grade dashboard for surveying private deal commitments across the Growth Circle stack. APEX terminal aesthetic — dark institutional theme, amber accents, IBM Plex typography.
 
-**[→ Open the live dashboard](https://YOUR_GH_USERNAME.github.io/growth-circle-dashboard/)**
+**[→ Open the live dashboard](https://jocelynrenaud-commits.github.io/growth-circle-dashboard/)**
 
 ## Quick start
 
 1. **Open the live dashboard** (link above) and bookmark it.
-2. **Download the tracker template:** [GC_Investment_Tracker_v5.1.xlsx](releases/GC_Investment_Tracker_v5.1.xlsx)
+2. **Download the tracker template:** [GC_Investment_Tracker_v5.3.xlsx](releases/GC_Investment_Tracker_v5.3.xlsx)
 3. **Open the tracker in Excel**, replace the example deals with your own, save the file locally.
 4. **Drag your saved file** onto the dashboard's drop zone.
 
@@ -32,23 +32,3 @@ When the **tracker template** changes (new columns, new sheets), the banner will
 If you'd rather run everything locally without a hosted URL: download the [offline bundle](releases/GC_Private_Markets_Dashboard.zip). It contains the dashboard HTML, the tracker template, and the setup guide as a Word document. Once extracted to a folder, double-click the HTML file. The dashboard works offline after first load (it caches its only external dependency, the spreadsheet-parsing library, automatically).
 
 ## What's in this repo
-
-```
-index.html              The dashboard. Hosted at the root URL via GitHub Pages.
-version.json            Current version manifest. Fetched by the dashboard on load.
-releases/
-  GC_Investment_Tracker_v5.1.xlsx    Current tracker template
-  GC_Private_Markets_Dashboard.zip   Offline bundle (HTML + tracker + guide)
-  SETUP_GUIDE.docx                   Word document setup guide
-  archive/                            Older versions kept for download
-CHANGELOG.md            Release history with notes on each version
-publish.sh              Maintainer-only release script (see MAINTAINER_GUIDE.md)
-```
-
-## Reporting issues / requesting features
-
-Open an issue in the [GitHub Issues tab](../../issues), or post in the Growth Circle forum thread where you found this.
-
-## Disclaimer
-
-This dashboard is a tracking and visualization tool. It is not investment, tax, or legal advice. The information you see is only as good as what you've entered. All investment decisions remain yours alone.
