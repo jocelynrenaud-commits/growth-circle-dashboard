@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>APEX — Private Markets</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+  :root {
+    --bg:#080C12; --surf:#0D1420; --card:#111A28; --hi:#162035;
+    --bdr:#1E2D45; --bhi:#2A3F5F;
+    --p:#E8EFF8; --s:#7A90B0; --m:#3A4F6A;
+    --blue:#2563EB; --blueL:#60A5FA;
+    --green:#059669; --greenL:#34D399;
+    --amber:#D97706; --amberL:#FCD34D; --amberXL:#FDE68A;
+    --red:#DC2626; --redL:#F87171;
+    --purple:#7C3AED; --purpleL:#A78BFA;
+    --teal:#14B8A6;
+    /* Private Deals fund color */
+    --fm:#D97706; --fl:#FCD34D; --fbg:#1A1200; --fb:#3D2800;
+    --sans: 'IBM Plex Sans', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; margin:0; padding:0; }
+  html,body { background: var(--bg); color: var(--p); font-family: var(--sans); font-size:13px; line-height:1.5; }
+  body { min-height:100vh; }
+  button { font-family: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+  input, select, textarea { font-family: inherit; color: var(--p); background: var(--hi); border: 1px solid var(--bdr); border-radius: 6px; padding: 6px 8px; font-size: 12px; }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--fm); }
+  ::-webkit-scrollbar { width:8px; height:8px; }
+  ::-webkit-scrollbar-track { background: var(--surf); }
+  ::-webkit-scrollbar-thumb { background: var(--bhi); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: #3b537a; }
+
+  /* ===== LAYOUT ===== */
+  .shell { max-width: 1600px; margin: 0 auto; padding: 24px 32px 80px; }
+
+  /* ===== HEADER ===== */
+  .hdr {
+    display:flex; align-items:center; justify-content:space-between;
+    padding: 20px 24px; background: linear-gradient(135deg, var(--fbg), #0D1420 60%);
+    border: 1px solid var(--fb); border-radius: 12px; margin-bottom: 24px;
+    position: relative; overflow: hidden;
+  }
+  .hdr::before {
+    content: ''; position: absolute; inset: 0;
+    background: radial-gradient(ellipse at top right, rgba(217,119,6,0.08), transparent 50%);
+    pointer-events: none;
+  }
+  .hdr-l { display:flex; align-items:center; gap: 16px; }
+  .hdr-badge {
+    width: 44px; height:44px; border-radius: 10px;
+    background: linear-gradient(135deg, var(--fm), var(--fl));
+    display:flex; align-items:center; justify-content:center;
+    font-family: var(--mono); font-weight:800; font-size: 18px; color: #1A1200;
+    box-shadow: 0 4px 12px rgba(217,119,6,0.25);
+  }
+  .hdr-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+  .hdr-sub { font-size: 10px; letter-spacing: 0.12em; color: var(--amberL); margin-top: 2px; font-family: var(--mono); }
+  .hdr-r { display:flex; align-items:center; gap: 10px; font-family: var(--mono); font-size: 10px; color: var(--s); letter-spacing: 0.08em; }
+
+  .btn {
+    padding: 8px 14px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    border: 1px solid var(--bdr); background: var(--hi); color: var(--p);
+    transition: all 0.15s ease; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn:hover { border-color: var(--fm); background: var(--card); }
+  .btn-p { background: var(--fm); border-color: var(--fm); color: #1A1200; }
+  .btn-p:hover { background: var(--fl); border-color: var(--fl); color: #1A1200; }
+  .btn-sm { padding: 5px 9px; font-size: 11px; }
+  .btn-xs { padding: 3px 7px; font-size: 10px; border-radius: 5px; }
+  .btn-danger:hover { border-color: var(--red); color: var(--redL); background: rgba(220,38,38,0.08); }
+
+  /* ===== KPI STRIP ===== */
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 24px; }
+  .kpi { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px 16px; }
+  .kpi-l { font-size: 9px; color: var(--s); letter-spacing: 0.12em; font-family: var(--mono); text-transform: uppercase; }
+  .kpi-v { font-size: 20px; font-weight: 700; margin-top: 6px; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .kpi-v.amber { color: var(--amberL); }
+  .kpi-sub { font-size: 10px; color: var(--s); margin-top: 2px; font-family: var(--mono); }
+
+  /* ===== SECTIONS ===== */
+  .section { margin-bottom: 24px; }
+  .sec-hdr { display:flex; align-items: baseline; justify-content: space-between; margin-bottom: 12px; }
+  .sec-title { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  .sec-sub { font-size: 10px; color: var(--s); font-family: var(--mono); letter-spacing: 0.08em; }
+
+  /* ===== TWO COL ANALYTICS ===== */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+  .panel { background: var(--card); border: 1px solid var(--bdr); border-radius: 10px; padding: 18px; }
+  .panel-hdr { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+  .panel-title { font-size: 12px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; color: var(--p); }
+  .panel-sub { font-size: 9px; color: var(--s); font-family: var(--mono); letter-spacing: 0.1em; }
+
+  /* Donut chart legend */
+  .alloc-legend { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--bdr); display: flex; flex-direction: column; gap: 4px; }
+  .alloc-legend-l { font-family: var(--mono); font-size: 9px; letter-spacing: 0.14em; color: var(--s); margin-bottom: 4px; }
+  .alloc-legend-item { display: grid; grid-template-columns: 14px auto 1fr auto; gap: 8px; align-items: center; font-size: 11px; }
+  .alloc-legend-sw { width: 10px; height: 10px; border-radius: 2px; }
+  .alloc-legend-name { color: var(--p); font-weight: 600; }
+  .alloc-legend-val { color: var(--s); font-family: var(--mono); font-variant-numeric: tabular-nums; text-align: right; }
+  .alloc-legend-pct { color: var(--amberL); font-family: var(--mono); font-size: 10px; font-variant-numeric: tabular-nums; min-width: 38px; text-align: right; }
+  /* Layout: in the analytics grid, the alloc panel renders the donut centered with legend below */
+  #alloc { display: flex; flex-direction: column; align-items: stretch; }
+
+  /* R-code coverage */
+  .rc-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .rc { min-height: 175px; border-radius: 7px; padding: 12px 14px; display: flex; flex-direction: column; justify-content: space-between; border: 1px solid; transition: all 0.15s; }
+  .rc.filled { background: rgba(217,119,6,0.06); border-color: var(--fb); }
+  .rc.empty { background: var(--hi); border-color: var(--bdr); opacity: 0.55; }
+  .rc-code { font-family: var(--mono); font-size: 16px; font-weight: 700; color: var(--amberL); }
+  .rc.empty .rc-code { color: var(--m); }
+  .rc-body { display: flex; flex-direction: column; gap: 3px; }
+  .rc-name { font-size: 11px; line-height: 1.25; color: var(--s); margin-bottom: 4px; }
+  .rc.filled .rc-name { color: var(--p); }
+  .rc-detail { font-size: 11.5px; font-family: var(--mono); color: var(--p); font-variant-numeric: tabular-nums; font-weight: 500; line-height: 1.35; }
+  .rc.filled .rc-detail { color: var(--amberXL); }
+  .rc-sub { font-size: 10px; color: var(--s); margin-top: 2px; }
+  .rc-empty-label { color: var(--m); font-size: 10px; }
+
+  /* ===== DEAL GROUP ===== */
+  .group { margin-bottom: 20px; }
+  .group-hdr {
+    display:flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px; background: var(--surf); border: 1px solid var(--bdr);
+    border-radius: 8px 8px 0 0; font-family: var(--mono);
+  }
+  .group-name { font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 700; color: var(--amberXL); }
+  .group-tot { font-size: 11px; color: var(--s); font-variant-numeric: tabular-nums; }
+
+  /* ===== DEAL CARD ===== */
+  .deals { display: flex; flex-direction: column; gap: 1px; background: var(--bdr); border-radius: 0 0 8px 8px; overflow: hidden; border: 1px solid var(--bdr); border-top: none; }
+  .deal { background: var(--card); padding: 16px 18px; transition: background 0.12s; position: relative; }
+  .deal:hover { background: var(--hi); }
+  .deal.expanded { background: var(--hi); }
+
+  .deal-row {
+    display: grid;
+    grid-template-columns: 70px minmax(240px, 2fr) 90px 1.2fr 1fr 130px 30px;
+    gap: 14px; align-items: center;
+  }
+
+  /* Score badge */
+  .score {
+    width: 52px; height: 52px; border-radius: 11px;
+    display:flex; flex-direction: column; align-items: center; justify-content: center;
+    font-family: var(--mono); border: 1.5px solid;
+  }
+  .score-n { font-size: 18px; font-weight: 800; line-height: 1; }
+  .score-l { font-size: 8px; letter-spacing: 0.1em; margin-top: 2px; }
+  .score.high { background: rgba(5,150,105,0.1); border-color: rgba(5,150,105,0.5); color: var(--greenL); }
+  .score.mid { background: rgba(217,119,6,0.1); border-color: rgba(217,119,6,0.5); color: var(--amberL); }
+  .score.low { background: rgba(220,38,38,0.1); border-color: rgba(220,38,38,0.5); color: var(--redL); }
+  .score.none { background: var(--hi); border-color: var(--bdr); color: var(--m); }
+
+  /* Name + meta */
+  .d-name { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  .d-meta { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; font-family: var(--mono); font-size: 9.5px; letter-spacing: 0.06em; }
+  .tag { padding: 2px 6px; border-radius: 3px; background: var(--hi); color: var(--s); border: 1px solid var(--bdr); text-transform: uppercase; }
+  .tag.rcode { background: rgba(217,119,6,0.12); color: var(--amberL); border-color: var(--fb); }
+  .tag.acct { background: rgba(37,99,235,0.1); color: var(--blueL); border-color: rgba(37,99,235,0.3); }
+  .tag.status-active { background: rgba(5,150,105,0.1); color: var(--greenL); border-color: rgba(5,150,105,0.3); }
+  .tag.status-pending { background: rgba(217,119,6,0.1); color: var(--amberL); border-color: rgba(217,119,6,0.3); }
+  .tag.status-research { background: rgba(124,58,237,0.1); color: var(--purpleL); border-color: rgba(124,58,237,0.3); }
+  .tag.status-closed { background: var(--hi); color: var(--s); }
+
+  /* Conviction tier */
+  .d-tier { font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; color: var(--s); text-align: center; padding: 4px; }
+  .d-tier strong { display:block; font-size: 11px; color: var(--p); letter-spacing: 0; margin-bottom: 2px; }
+
+  /* Sizing bar */
+  .d-size { font-family: var(--mono); font-size: 11px; }
+  .d-size-bar { height: 8px; background: var(--hi); border-radius: 3px; overflow: hidden; margin: 6px 0 4px; display: flex; }
+  .d-size-fund { background: linear-gradient(90deg, var(--fm), var(--fl)); }
+  .d-size-unf { background: rgba(217,119,6,0.25); }
+  .d-size-labels { display:flex; justify-content: space-between; font-size: 10px; color: var(--s); font-variant-numeric: tabular-nums; }
+  .d-size-funded { color: var(--amberL); font-weight: 600; }
+
+  /* Next event */
+  .d-event { font-family: var(--mono); font-size: 10.5px; }
+  .d-event-l { font-size: 8.5px; color: var(--s); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 2px; }
+  .d-event-v { color: var(--p); font-variant-numeric: tabular-nums; }
+  .d-event-amt { color: var(--amberL); font-weight: 600; }
+  .d-event-dist { color: var(--greenL); }
+
+  /* Expand chevron */
+  .d-chev { width: 28px; height: 28px; border-radius: 6px; background: var(--hi); display:flex; align-items:center; justify-content:center; transition: all 0.15s; border: 1px solid var(--bdr); }
+  .deal:hover .d-chev { border-color: var(--fm); }
+  .d-chev svg { width: 14px; height: 14px; color: var(--s); transition: transform 0.2s; }
+  .deal.expanded .d-chev svg { transform: rotate(180deg); color: var(--amberL); }
+
+  /* ===== EXPANDED DETAIL ===== */
+  .detail { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--bdr); display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; }
+  .det-section { background: var(--surf); border: 1px solid var(--bdr); border-radius: 8px; padding: 14px; }
+  .det-hdr { display:flex; justify-content: space-between; align-items: baseline; margin-bottom: 10px; }
+  .det-title { font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--amberL); }
+  .det-edit { font-size: 10px; color: var(--s); }
+  .det-edit:hover { color: var(--amberL); }
+
+  .det-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 12px; border-bottom: 1px dashed var(--bdr); }
+  .det-row:last-child { border-bottom: none; }
+  .det-row-l { color: var(--s); font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.04em; }
+  .det-row-v { color: var(--p); font-variant-numeric: tabular-nums; }
+  .det-row input, .det-row select { width: 160px; text-align: right; }
+  .det-row textarea { width: 100%; min-height: 60px; }
+
+  .killer {
+    background: rgba(220,38,38,0.05); border: 1px solid rgba(220,38,38,0.25);
+    border-radius: 7px; padding: 12px; margin-top: 6px;
+  }
+  .killer-l { font-family: var(--mono); font-size: 10px; color: var(--redL); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 6px; }
+  .killer-v { font-size: 12px; line-height: 1.55; color: var(--p); }
+
+  .verdict { display:flex; gap: 8px; align-items: center; }
+  .verdict-pill { padding: 4px 10px; border-radius: 4px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; }
+  .verdict-pill.resistant { background: rgba(5,150,105,0.12); color: var(--greenL); border: 1px solid rgba(5,150,105,0.3); }
+  .verdict-pill.oversized { background: rgba(220,38,38,0.12); color: var(--redL); border: 1px solid rgba(220,38,38,0.3); }
+  .verdict-pill.under { background: rgba(217,119,6,0.12); color: var(--amberL); border: 1px solid rgba(217,119,6,0.3); }
+
+  .radar-wrap { display:flex; justify-content: center; padding: 8px; }
+  .followups { display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .fu { background: var(--hi); border-radius: 6px; padding: 10px 12px; border-left: 3px solid var(--fm); }
+  .fu.closed { opacity: 0.55; border-left-color: var(--greenL); }
+  .fu-type { font-family: var(--mono); font-size: 9px; letter-spacing: 0.12em; color: var(--amberL); text-transform: uppercase; margin-bottom: 4px; }
+  .fu.closed .fu-type { color: var(--greenL); }
+  .fu-q { font-size: 11.5px; line-height: 1.5; color: var(--p); }
+
+  .drivers { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .driver { display:flex; gap: 10px; padding: 8px 10px; background: var(--hi); border-radius: 6px; font-size: 11px; }
+  .driver-n { font-family: var(--mono); font-size: 10px; color: var(--amberL); min-width: 100px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* ===== SYNC MODAL ===== */
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 100; display: none; align-items: center; justify-content: center; padding: 20px; }
+  .modal-bg.open { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--bdr); border-radius: 12px; max-width: 720px; width: 100%; max-height: 88vh; overflow-y: auto; }
+  .modal-hdr { padding: 18px 22px; border-bottom: 1px solid var(--bdr); display:flex; justify-content:space-between; align-items: center; position: sticky; top: 0; background: var(--card); z-index: 2; }
+  .modal-title { font-size: 14px; font-weight: 700; letter-spacing: -0.01em; }
+  .modal-body { padding: 22px; }
+  .modal-x { width: 28px; height: 28px; display:flex; align-items:center; justify-content:center; border-radius: 6px; color: var(--s); }
+  .modal-x:hover { background: var(--hi); color: var(--p); }
+
+  .drop {
+    border: 2px dashed var(--bdr); border-radius: 10px; padding: 40px;
+    text-align: center; transition: all 0.2s; cursor: pointer;
+  }
+  .drop:hover, .drop.over { border-color: var(--fm); background: rgba(217,119,6,0.04); }
+  .drop-icon { font-size: 40px; color: var(--fm); margin-bottom: 10px; }
+  .drop-t { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .drop-s { font-size: 11px; color: var(--s); }
+  .drop input { display: none; }
+
+  .sync-result { margin-top: 18px; max-height: 60vh; overflow-y: auto; padding-right: 4px; }
+  .diff-section-h { margin: 16px 0 8px; font-family: var(--mono); font-size: 10px; letter-spacing: 0.12em; color: var(--amberL); font-weight: 700; padding-bottom: 4px; border-bottom: 1px solid var(--bdr); }
+  .diff-row { padding: 8px 10px; font-family: var(--mono); font-size: 10.5px; border-radius: 5px; margin-bottom: 4px; line-height: 1.5; }
+  .diff-row.add { background: rgba(5,150,105,0.08); border-left: 2px solid var(--greenL); }
+  .diff-row.upd { background: rgba(37,99,235,0.08); border-left: 2px solid var(--blueL); }
+  .diff-row.del { background: rgba(220,38,38,0.08); border-left: 2px solid var(--redL); }
+  .diff-row.same { color: var(--s); }
+  .diff-row-h { font-weight: 700; color: var(--p); margin-bottom: 4px; font-size: 11px; }
+  .diff-row.add .diff-row-h { color: var(--greenL); }
+  .diff-row.upd .diff-row-h { color: var(--blueL); }
+  .diff-row.del .diff-row-h { color: var(--redL); }
+  .diff-id { color: var(--m); font-weight: 400; font-size: 9.5px; letter-spacing: 0.05em; }
+  .diff-change { color: var(--s); padding: 2px 0 2px 14px; font-size: 10.5px; }
+  .diff-change strong { color: var(--p); font-weight: 600; }
+
+  /* ===== ADD DEAL FORM ===== */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .fld { display: flex; flex-direction: column; gap: 4px; }
+  .fld-l { font-family: var(--mono); font-size: 10px; color: var(--s); letter-spacing: 0.08em; text-transform: uppercase; }
+  .fld-full { grid-column: 1 / -1; }
+
+  /* ===== ALERTS ===== */
+  .flag-row { display:flex; gap: 10px; flex-wrap: wrap; margin-bottom: 20px; }
+  .flag {
+    flex: 1; min-width: 260px;
+    padding: 12px 14px; border-radius: 8px; font-size: 11.5px;
+    display: flex; gap: 10px; align-items: flex-start;
+    border: 1px solid;
+  }
+  .flag.warn { background: rgba(217,119,6,0.06); border-color: rgba(217,119,6,0.3); color: var(--amberXL); }
+  .flag.crit { background: rgba(220,38,38,0.06); border-color: rgba(220,38,38,0.3); color: var(--redL); }
+  .flag.ok { background: rgba(5,150,105,0.06); border-color: rgba(5,150,105,0.3); color: var(--greenL); }
+  .flag-ico { font-size: 16px; line-height: 1; }
+  .flag-t { font-weight: 700; margin-bottom: 3px; font-size: 11px; letter-spacing: 0.02em; }
+  .flag-d { font-size: 11px; line-height: 1.45; color: var(--s); }
+
+  /* ===== LIQUIDITY LADDER ===== */
+  .ladder { display:flex; gap: 4px; margin-top: 12px; }
+  .ladder-col { flex: 1; min-height: 80px; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; }
+  .ladder-bar { min-height: 38px; border-radius: 3px; padding: 5px 7px; font-family: var(--mono); font-size: 9px; display: flex; flex-direction: column; justify-content: center; overflow: hidden; white-space: nowrap; line-height: 1.15; }
+  .ladder-bar-name { font-weight: 600; font-size: 9.5px; color: #fff; }
+  .ladder-bar-amt { font-size: 8.5px; opacity: 0.85; color: #fff; }
+  .ladder-year { text-align: center; font-family: var(--mono); font-size: 9.5px; color: var(--s); letter-spacing: 0.08em; padding-top: 6px; border-top: 1px solid var(--bdr); margin-top: 2px; }
+  .ladder-year.current { color: var(--amberL); }
+
+  /* ===== CAPITAL CASH FLOW ===== */
+  .cashflow { display: flex; align-items: flex-end; gap: 2px; min-height: 180px; padding: 8px 0; margin-top: 10px; }
+  .cf-q { flex: 1; min-width: 36px; display: flex; flex-direction: column; align-items: stretch; gap: 4px; height: 180px; }
+  .cf-q-bars { flex: 1; display: flex; align-items: flex-end; justify-content: center; gap: 2px; padding-bottom: 4px; border-bottom: 1px solid var(--bdr); position: relative; }
+  .cf-q-bar-wrap { display: flex; flex-direction: column; align-items: center; flex: 1; max-width: 22px; }
+  .cf-q-bar { width: 100%; min-height: 3px; border-radius: 2px 2px 0 0; transition: height 0.25s; }
+  .cf-q-bar.call { background: linear-gradient(180deg, #F87171, #DC2626); }
+  .cf-q-bar.dist { background: linear-gradient(180deg, #34D399, #059669); }
+  .cf-q-bar-amt { font-family: var(--mono); font-size: 8.5px; color: var(--p); margin-bottom: 2px; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; }
+  .cf-q-bar.call + .cf-q-bar-amt, .cf-q-bar-wrap.call .cf-q-bar-amt { color: #FCA5A5; }
+  .cf-q-bar-wrap.dist .cf-q-bar-amt { color: #6EE7B7; }
+  .cf-q.past { opacity: 0.32; }
+  .cf-q.past .cf-q-bar.call { background: #6B7280; }
+  .cf-q.past .cf-q-bar.dist { background: #6B7280; }
+  .cf-q-label { font-family: var(--mono); font-size: 9px; color: var(--s); letter-spacing: 0.06em; text-align: center; transform: rotate(-45deg) translateX(4px); transform-origin: center top; height: 30px; padding-top: 4px; }
+  .cf-q.current .cf-q-label { color: var(--amberL); }
+  .cashflow-legend { display: flex; gap: 18px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--bdr); font-family: var(--mono); font-size: 10px; color: var(--s); }
+  .cf-leg-item { display: inline-flex; align-items: center; gap: 6px; }
+  .cf-leg-sw { width: 12px; height: 12px; border-radius: 2px; }
+  .cf-leg-sw.cf-call { background: linear-gradient(180deg, #F87171, #DC2626); }
+  .cf-leg-sw.cf-dist { background: linear-gradient(180deg, #34D399, #059669); }
+  .cf-leg-sw.cf-past { background: #6B7280; opacity: 0.5; }
+
+  /* ===== MISC ===== */
+  .muted { color: var(--s); }
+  .hidden { display: none !important; }
+  .empty-state { text-align: center; padding: 40px; color: var(--s); font-size: 12px; }
+
+  /* ===== EMPTY LANDING (pre-sync state) ===== */
+  .empty-landing { text-align: center; padding: 60px 24px 40px; max-width: 720px; margin: 24px auto 60px; }
+  .empty-icon {
+    font-family: var(--mono); font-size: 56px; line-height: 1; color: var(--amberL);
+    margin-bottom: 24px; opacity: 0.85;
+  }
+  .empty-headline {
+    font-size: 28px; font-weight: 700; letter-spacing: -0.02em; color: var(--p);
+    margin-bottom: 12px;
+  }
+  .empty-body {
+    font-size: 14px; color: var(--s); line-height: 1.55; margin-bottom: 32px;
+    max-width: 560px; margin-left: auto; margin-right: auto;
+  }
+  .empty-body strong { color: var(--amberL); font-weight: 600; }
+  .drop-zone {
+    border: 1.5px dashed var(--bdr); border-radius: 10px; padding: 40px 24px;
+    background: rgba(217,119,6,0.03);
+    cursor: pointer; transition: all 0.2s; max-width: 560px; margin: 0 auto;
+  }
+  .drop-zone:hover, .drop-zone.over {
+    border-color: var(--amberL); background: rgba(217,119,6,0.08);
+  }
+  .drop-zone-title {
+    font-size: 18px; font-weight: 600; color: var(--p); margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .drop-zone-hint {
+    font-family: var(--mono); font-size: 10.5px; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--m);
+  }
+  .empty-help {
+    margin-top: 36px; padding: 22px 28px; max-width: 560px; margin-left: auto; margin-right: auto;
+    background: var(--surf); border: 1px solid var(--bdr); border-left: 3px solid var(--amberL);
+    border-radius: 6px; text-align: left;
+  }
+  .empty-help-h {
+    font-size: 12px; font-weight: 600; color: var(--p); margin-bottom: 10px;
+    font-family: var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  }
+  .empty-help-list { padding-left: 22px; margin: 0; counter-reset: step; list-style: none; }
+  .empty-help-list li {
+    font-size: 13px; color: var(--s); line-height: 1.55; margin-bottom: 6px;
+    counter-increment: step; position: relative; padding-left: 4px;
+  }
+  .empty-help-list li::before {
+    content: counter(step) ".";
+    position: absolute; left: -22px; top: 0;
+    font-family: var(--mono); color: var(--amberL); font-weight: 700;
+  }
+  .empty-help-list code, .empty-help code {
+    font-family: var(--mono); font-size: 11.5px; color: var(--amberXL);
+    background: rgba(217,119,6,0.08); padding: 1px 5px; border-radius: 3px;
+  }
+  .empty-help-list strong { color: var(--p); }
+  .toast {
+    position: fixed; bottom: 24px; right: 24px; background: var(--card);
+    border: 1px solid var(--fm); border-radius: 8px; padding: 12px 18px;
+    font-size: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    opacity: 0; transform: translateY(10px); transition: all 0.25s; z-index: 200;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+
+  @media (max-width: 1200px) {
+    .kpis { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: 1fr; }
+    .deal-row { grid-template-columns: 60px 1fr 90px 1fr; gap: 10px; }
+    .deal-row > :nth-child(5), .deal-row > :nth-child(6), .deal-row > :nth-child(7) { display: none; }
+    .detail { grid-template-columns: 1fr; }
+  }
+
+  /* Update available banner — shown when remote version > embedded version */
+  .update-banner {
+    display: none;
+    background: linear-gradient(90deg, #2a1f0a, #3a2810);
+    border-bottom: 1px solid #f5a623;
+    color: #f5a623;
+    padding: 10px 24px;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    font-size: 13px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .update-banner.visible { display: flex; }
+  .update-banner-l { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1; }
+  .update-banner-icon {
+    width: 22px; height: 22px; border-radius: 50%; background: #f5a623; color: #1a1a1a;
+    display: flex; align-items: center; justify-content: center; font-weight: 700;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .update-banner-text { color: #e8d5a8; min-width: 0; }
+  .update-banner-text strong { color: #f5a623; }
+  .update-banner-text .changelog-snippet { color: #a8946d; font-style: italic; }
+  .update-banner-r { display: flex; gap: 8px; flex-shrink: 0; }
+  .update-banner .btn-update {
+    background: #f5a623; color: #1a1a1a; border: none; padding: 6px 14px;
+    border-radius: 4px; font-weight: 600; font-size: 12px; cursor: pointer;
+    text-decoration: none; display: inline-block;
+  }
+  .update-banner .btn-update:hover { background: #ffb838; }
+  .update-banner .btn-dismiss {
+    background: transparent; color: #a8946d; border: 1px solid #4a3920;
+    padding: 6px 12px; border-radius: 4px; font-size: 12px; cursor: pointer;
+  }
+  .update-banner .btn-dismiss:hover { color: #e8d5a8; border-color: #6a5530; }
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <!-- UPDATE BANNER — shown when version-check finds a newer release -->
+  <div id="updateBanner" class="update-banner" role="alert">
+    <div class="update-banner-l">
+      <div class="update-banner-icon">↑</div>
+      <div class="update-banner-text">
+        <strong>New version available:</strong>
+        <span id="updateBannerVersion">v—</span>
+        <span id="updateBannerNote" class="changelog-snippet"></span>
+      </div>
+    </div>
+    <div class="update-banner-r">
+      <a id="updateBannerLink" class="btn-update" href="#" target="_blank" rel="noopener">Update</a>
+      <button class="btn-dismiss" onclick="dismissUpdateBanner()">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- HEADER -->
+  <div class="hdr">
+    <div class="hdr-l">
+      <div class="hdr-badge">P</div>
+      <div>
+        <div class="hdr-title">Private Markets</div>
+        <div class="hdr-sub">APEX · GROWTH CIRCLE PORTFOLIO</div>
+      </div>
+    </div>
+    <div class="hdr-r">
+      <span id="syncStatus">○ NOT SYNCED</span>
+      <button class="btn btn-sm" onclick="openModal('sync')">⟲ Sync Tracker</button>
+    </div>
+  </div>
+
+  <!-- EMPTY STATE — shown when no deals are loaded -->
+  <div id="emptyState" class="empty-landing">
+    <div class="empty-icon">↓</div>
+    <div class="empty-headline">Sync Your Tracker to Begin</div>
+    <div class="empty-body">
+      Drop your <strong>GC_Investment_Tracker.xlsx</strong> file below, or click to browse. The dashboard will populate from your Investments, GC_Framework, and CashFlow_Chart sheets.
+    </div>
+    <div class="drop-zone" id="dropZoneMain" onclick="document.getElementById('fileInputMain').click()">
+      <div class="drop-zone-title">⤓ Drop tracker here</div>
+      <div class="drop-zone-hint">or click to browse · .xlsx only · stays on your computer</div>
+      <input type="file" id="fileInputMain" accept=".xlsx,.xls" style="display:none" />
+    </div>
+    <div class="empty-help">
+      <div class="empty-help-h">First time? Quick setup:</div>
+      <ol class="empty-help-list">
+        <li>Open the bundled <code>GC_Investment_Tracker.xlsx</code> in Excel or Google Sheets</li>
+        <li>Enter your private deals on the <strong>Investments</strong> tab</li>
+        <li>Optional: fill the <strong>GC_Framework</strong> tab for memo-derived insights</li>
+        <li>Save the file, then drop it on the zone above</li>
+      </ol>
+    </div>
+  </div>
+
+  <!-- DASHBOARD — hidden until tracker is loaded -->
+  <div id="dashboard">
+
+  <!-- KPIs -->
+  <div class="kpis" id="kpis"></div>
+
+  <!-- FLAGS (concentration, liquidity warnings) -->
+  <div class="flag-row" id="flags"></div>
+
+  <!-- Analytics (Asset Allocation + R-Code Coverage) -->
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="panel-title">Allocation by Asset Class</div>
+        <div class="panel-sub">FUNDED $</div>
+      </div>
+      <div id="alloc"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-hdr">
+        <div class="panel-title">R-Code Coverage</div>
+        <div class="panel-sub">FIVE-SLEEVE ARCHITECTURE</div>
+      </div>
+      <div class="rc-grid" id="rcgrid"></div>
+    </div>
+  </div>
+
+  <!-- Liquidity Ladder -->
+  <div class="panel section">
+    <div class="panel-hdr">
+      <div class="panel-title">Maturity & Liquidity Ladder</div>
+      <div class="panel-sub">DEALS BY EXPECTED RETURN YEAR</div>
+    </div>
+    <div class="ladder" id="ladder"></div>
+  </div>
+
+  <!-- Capital Call & Preferred Distribution Flow -->
+  <div class="panel section">
+    <div class="panel-hdr">
+      <div class="panel-title">Capital Call & Preferred Distribution Flow</div>
+      <div class="panel-sub">QUARTERLY SD-IRA CASH FLOW · RED = CALLS OUT  |  GREEN = INCOME IN</div>
+    </div>
+    <div class="cashflow" id="cashflow"></div>
+    <div class="cashflow-legend">
+      <span class="cf-leg-item"><span class="cf-leg-sw cf-call"></span>Capital Calls</span>
+      <span class="cf-leg-item"><span class="cf-leg-sw cf-dist"></span>Preferred Distributions</span>
+      <span class="cf-leg-item"><span class="cf-leg-sw cf-past"></span>Past (faded)</span>
+    </div>
+  </div>
+
+  <!-- Deals grouped by asset class -->
+  <div id="groups"></div>
+
+  </div><!-- /#dashboard -->
+
+</div>
+
+<!-- SYNC MODAL -->
+<div class="modal-bg" id="modal-sync">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div>
+        <div class="modal-title">Sync Tracker Spreadsheet</div>
+        <div class="panel-sub" style="margin-top:4px">MERGE MODE — GC MEMO DETAILS PRESERVED</div>
+      </div>
+      <button class="modal-x" onclick="closeModal('sync')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="drop" id="drop" onclick="document.getElementById('fileInput').click()">
+        <div class="drop-icon">⊕</div>
+        <div class="drop-t">Drop tracker XLSX here or click to browse</div>
+        <div class="drop-s">Investments sheet will be parsed; $ values updated; GC framework data preserved</div>
+        <input type="file" id="fileInput" accept=".xlsx,.xls" />
+      </div>
+      <div id="syncResult" class="sync-result"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ============================================================
+// STATE & STORAGE
+// ============================================================
+const STORE_KEY = 'gc_privmkt_v4';
+
+// Polyfill window.storage for local-file testing. Mirrors APEX's persistent storage.
+if (!window.storage) {
+  window.storage = {
+    async get(k) { const v = localStorage.getItem(k); return v ? { value: v } : null; },
+    async set(k, v) { localStorage.setItem(k, typeof v === 'string' ? v : JSON.stringify(v)); return { value: v }; },
+    async delete(k) { localStorage.removeItem(k); return { deleted: true }; },
+  };
+}
+
+const STORE = {
+  async get(k) {
+    try {
+      const r = await window.storage.get(k);
+      return r ? JSON.parse(typeof r.value === 'string' ? r.value : JSON.stringify(r.value)) : null;
+    } catch { return null; }
+  },
+  async set(k, v) { try { await window.storage.set(k, JSON.stringify(v)); } catch (e) { console.warn(e); } }
+};
+
+// ============================================================
+// VERSIONING & UPDATE CHECK
+// ============================================================
+// VERSION is bumped on every release via the publish.sh script.
+// The dashboard fetches version.json from the public repo on load and shows a
+// banner if a newer dashboard version is available, OR if a newer tracker
+// template version is available.
+//
+// All data flow stays local. The version check is a single GET request for a
+// tiny JSON file; it sends no spreadsheet data, no analytics, no tracking.
+const VERSION = {
+  dashboard: '1.0.0',  // bumped by publish.sh
+  tracker: '5.3',      // current tracker template version
+  // Hosting URL for version.json. Set to '' to disable update checks entirely.
+  // Replace 'YOUR_GH_USERNAME' below after you've created the repo.
+  manifestUrl: 'https://YOUR_GH_USERNAME.github.io/growth-circle-dashboard/version.json',
+};
+
+const DISMISS_KEY = 'gc_update_dismissed_for';  // stores last dismissed version
+
+// Compare two semver-ish strings: '1.2.3' > '1.2.0', '5.1' > '5.0'.
+// Returns -1, 0, 1.
+function cmpVersion(a, b) {
+  const pa = String(a).split('.').map(n => parseInt(n, 10) || 0);
+  const pb = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const da = pa[i] || 0, db = pb[i] || 0;
+    if (da > db) return 1;
+    if (da < db) return -1;
+  }
+  return 0;
+}
+
+async function checkForUpdates() {
+  if (!VERSION.manifestUrl || VERSION.manifestUrl.includes('YOUR_GH_USERNAME')) return;
+  // Cache-bust so users don't see stale version.json from CDN edge caches.
+  const url = VERSION.manifestUrl + '?t=' + Date.now();
+  let manifest;
+  try {
+    const resp = await fetch(url, { cache: 'no-store' });
+    if (!resp.ok) return;
+    manifest = await resp.json();
+  } catch (e) {
+    // Network error, offline, or DNS — silently skip. Don't pester users.
+    return;
+  }
+  const dashOut = manifest.dashboard && cmpVersion(manifest.dashboard, VERSION.dashboard) > 0;
+  const trackOut = manifest.tracker && cmpVersion(manifest.tracker, VERSION.tracker) > 0;
+  if (!dashOut && !trackOut) return;
+  // Decide which update to show — dashboard wins (you'll see tracker only if dashboard is current)
+  let kind, newVer, downloadUrl, note;
+  if (dashOut) {
+    kind = 'dashboard';
+    newVer = manifest.dashboard;
+    downloadUrl = manifest.dashboard_url || manifest.download_url || '';
+    note = manifest.dashboard_note || '';
+  } else {
+    kind = 'tracker';
+    newVer = manifest.tracker;
+    downloadUrl = manifest.tracker_url || '';
+    note = manifest.tracker_note || '';
+  }
+  // Respect prior dismissal of THIS specific version
+  const dismissed = (await STORE.get(DISMISS_KEY)) || {};
+  if (dismissed[kind] === newVer) return;
+  showUpdateBanner(kind, newVer, downloadUrl, note);
+}
+
+function showUpdateBanner(kind, version, url, note) {
+  const banner = document.getElementById('updateBanner');
+  const verEl = document.getElementById('updateBannerVersion');
+  const noteEl = document.getElementById('updateBannerNote');
+  const linkEl = document.getElementById('updateBannerLink');
+  if (!banner) return;
+  const label = kind === 'dashboard' ? 'Dashboard' : 'Tracker template';
+  verEl.textContent = `${label} v${version}`;
+  noteEl.textContent = note ? `— ${note}` : '';
+  if (url) {
+    linkEl.href = url;
+    linkEl.style.display = '';
+    // For dashboard updates, the URL is the live dashboard itself; reload-equivalent
+    // For tracker updates, the URL is a download link (.xlsx)
+    linkEl.textContent = kind === 'dashboard' ? 'Reload' : 'Download';
+    if (kind === 'dashboard' && (url === window.location.href.split('#')[0] || url === '')) {
+      // If the update URL is the page itself, force a reload bypassing cache
+      linkEl.removeAttribute('target');
+      linkEl.onclick = (e) => { e.preventDefault(); window.location.reload(); };
+    }
+  } else {
+    linkEl.style.display = 'none';
+  }
+  // Stash the version on the banner so dismiss can record it
+  banner.dataset.kind = kind;
+  banner.dataset.version = version;
+  banner.classList.add('visible');
+}
+
+async function dismissUpdateBanner() {
+  const banner = document.getElementById('updateBanner');
+  if (!banner) return;
+  const kind = banner.dataset.kind;
+  const version = banner.dataset.version;
+  if (kind && version) {
+    const dismissed = (await STORE.get(DISMISS_KEY)) || {};
+    dismissed[kind] = version;
+    await STORE.set(DISMISS_KEY, dismissed);
+  }
+  banner.classList.remove('visible');
+}
+
+// ============================================================
+// R-CODE TAXONOMY (from GC Deal Comparison Framework)
+// ============================================================
+const R_CODES = [
+  { code: 'R0', name: 'Cash / Optionality' },
+  { code: 'R1', name: 'Public Beta' },
+  { code: 'R2', name: 'Anchor Income' },
+  { code: 'R3', name: 'High-Yield Private' },
+  { code: 'R4', name: 'Value-Add PE' },
+  { code: 'R5', name: 'Special Situations' },
+  { code: 'R6', name: 'Franchise / Brand IP' },
+  { code: 'R7', name: 'Platform VC' },
+  { code: 'R8', name: 'Moonshot / Binary' },
+  { code: 'R9', name: 'Diversifier / Non-Corr' },
+];
+
+// ============================================================
+// SEED DATA — matches the 11-deal GC v4 portfolio
+// ============================================================
+const SEED = {
+  deals: [],
+  context: {},        // R0/R1 IRA-A context — left empty by default
+  cashflowChart: null, // populated from CashFlow_Chart sheet on sync
+  meta: { lastSync: null, syncSource: null },
+};
+
+let STATE = { deals: [], context: {}, cashflowChart: null, meta: {} };
+let expandedDeals = new Set();
+
+async function loadState() {
+  const saved = await STORE.get(STORE_KEY);
+  if (saved && saved.deals && saved.deals.length) {
+    STATE = saved;
+  } else {
+    STATE = JSON.parse(JSON.stringify(SEED));
+    await saveState();
+  }
+}
+
+async function saveState() {
+  await STORE.set(STORE_KEY, STATE);
+}
+
+// ============================================================
+// HELPERS
+// ============================================================
+const C_INK = '#0D1420';
+const C_BG_CARD = '#111A28';
+// ============================================================
+const fmtD = (n, dec=0) => {
+  if (n == null || n === '' || isNaN(n)) return '—';
+  const x = Number(n);
+  if (Math.abs(x) >= 1000000) return '$' + (x/1000000).toFixed(2) + 'M';
+  if (Math.abs(x) >= 1000) return '$' + (x/1000).toFixed(0) + 'K';
+  return '$' + x.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec });
+};
+const fmtDf = (n) => n == null ? '—' : '$' + Number(n).toLocaleString();
+const fmtPct = (n, dec=1) => n == null ? '—' : (n>=0?'+':'') + Number(n).toFixed(dec) + '%';
+const scoreClass = (s) => s == null ? 'none' : s >= 75 ? 'high' : s >= 60 ? 'mid' : 'low';
+const scoreLabel = (s) => s == null ? 'N/A' : s >= 75 ? 'STRONG' : s >= 60 ? 'MODER' : 'WEAK';
+
+const tierLabel = (s) => {
+  if (s == null) return 'Not Scored';
+  if (s >= 90) return 'Core';
+  if (s >= 75) return 'Supporting';
+  if (s >= 60) return 'Opportunistic';
+  return 'Below Threshold';
+};
+
+const statusTag = (s) => {
+  if (!s) return 'status-pending';
+  const l = s.toLowerCase();
+  if (l.includes('active') || l.includes('monitor')) return 'status-active';
+  if (l.includes('partial')) return 'status-pending';
+  if (l.includes('research')) return 'status-research';
+  if (l.includes('closed')) return 'status-active'; // "Closed" in tracker means deal-closed (i.e. funded/active)
+  if (l.includes('opened') || l.includes('open')) return 'status-pending';
+  return 'status-pending';
+};
+
+// Derive a friendly status when the Status column is empty.
+// v4 trackers commonly leave Status blank but populate Deal Status with
+// "Closed" (deal closed = funded) or "Opened" (deal in process).
+const displayStatus = (d) => {
+  if (d.status) return d.status;
+  const ds = (d.dealStatusOpen || '').toLowerCase();
+  if (d.unfunded > 0 && d.funded > 0) return 'Partially Funded';
+  if (d.unfunded > 0 && (!d.funded || d.funded === 0)) return ds === 'opened' ? 'Committed' : 'Pending';
+  if (d.funded > 0) return 'Active/Monitoring';
+  return ds === 'opened' ? 'Researching' : 'Pending';
+};
+
+function toast(msg, ms=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+function openModal(id) { document.getElementById('modal-'+id).classList.add('open'); }
+function closeModal(id) { document.getElementById('modal-'+id).classList.remove('open'); }
+
+// ============================================================
+// RENDER: KPIs
+// ============================================================
+function renderKPIs() {
+  const d = STATE.deals;
+  const commit = d.reduce((a,x)=>a+(x.commitment||0),0);
+  const funded = d.reduce((a,x)=>a+(x.funded||0),0);
+  const unfunded = d.reduce((a,x)=>a+(x.unfunded||0),0);
+  const cv = d.reduce((a,x)=>a+(x.currentValue||0),0);
+  const dist = d.reduce((a,x)=>a+(x.distributions||0),0);
+  const active = d.filter(x => {
+    const s = displayStatus(x).toLowerCase();
+    return s.includes('active') || s.includes('partial');
+  }).length;
+
+  // Weighted Expected MOIC: sum(commitment * expectedMoic) / sum(commitment)
+  // Only includes deals that have an Expected MOIC populated.
+  let weightedNum = 0, weightedDen = 0, expCount = 0;
+  d.forEach(x => {
+    const m = Number(x.expectedMoic);
+    const c = Number(x.commitment) || 0;
+    if (m > 0 && c > 0) {
+      weightedNum += c * m;
+      weightedDen += c;
+      expCount++;
+    }
+  });
+  const expMoic = weightedDen > 0 ? (weightedNum / weightedDen) : null;
+  // Actual MOIC sub-label for context
+  const actualMoic = funded > 0 ? ((cv + dist) / funded) : 0;
+  const expMoicSub = expMoic == null
+    ? `actual ${actualMoic.toFixed(2)}x`
+    : `${expCount} of ${d.length} weighted · actual ${actualMoic.toFixed(2)}x`;
+  const expMoicValue = expMoic == null ? '—' : expMoic.toFixed(2) + 'x';
+
+  document.getElementById('kpis').innerHTML = `
+    <div class="kpi"><div class="kpi-l">Total Committed</div><div class="kpi-v amber">${fmtDf(commit)}</div><div class="kpi-sub">${d.length} deals</div></div>
+    <div class="kpi"><div class="kpi-l">Funded</div><div class="kpi-v">${fmtDf(funded)}</div><div class="kpi-sub">${Math.round(funded/commit*100)||0}% of commit</div></div>
+    <div class="kpi"><div class="kpi-l">Unfunded</div><div class="kpi-v">${fmtDf(unfunded)}</div><div class="kpi-sub">future capital calls</div></div>
+    <div class="kpi"><div class="kpi-l">Current Value</div><div class="kpi-v">${fmtDf(cv)}</div><div class="kpi-sub">marked to last update</div></div>
+    <div class="kpi"><div class="kpi-l">Distributions</div><div class="kpi-v">${fmtDf(dist)}</div><div class="kpi-sub">lifetime cash returned</div></div>
+    <div class="kpi"><div class="kpi-l">Expected MOIC (weighted)</div><div class="kpi-v amber">${expMoicValue}</div><div class="kpi-sub">${expMoicSub}</div></div>
+  `;
+}
+
+// ============================================================
+// RENDER: FLAGS
+// ============================================================
+function renderFlags() {
+  const d = STATE.deals;
+  const flags = [];
+
+  // Single-GP concentration (Spacestation look-through)
+  const ssDeals = d.filter(x => (x.sponsor||'').toLowerCase().includes('spacestation') || (x.sponsor||'').toLowerCase().includes('spvc'));
+  const ssCommit = ssDeals.reduce((a,x)=>a+(x.commitment||0),0);
+  const totCommit = d.reduce((a,x)=>a+(x.commitment||0),0);
+  const ssPct = totCommit > 0 ? (ssCommit/totCommit*100) : 0;
+  if (ssDeals.length > 0) {
+    const crit = ssPct > 50;
+    flags.push({
+      type: crit ? 'crit' : (ssPct > 30 ? 'warn' : 'ok'),
+      ico: crit ? '⚠' : (ssPct > 30 ? '◆' : '●'),
+      t: `Spacestation GP Concentration — ${ssPct.toFixed(0)}%`,
+      d: `${ssDeals.length} Spacestation-related deals totaling ${fmtDf(ssCommit)} committed. ${crit ? 'EXCEEDS recommended single-GP cap of 20% by substantial margin — monitor closely.' : ssPct > 30 ? 'Approaching recommended single-GP cap (~20%). Consider GP diversification in next iteration.' : 'Within single-GP concentration limits.'}`
+    });
+  }
+
+  // Unfunded obligation stack
+  const unfTot = d.reduce((a,x)=>a+(x.unfunded||0),0);
+  if (unfTot > 0) {
+    flags.push({
+      type: unfTot > 200000 ? 'warn' : 'ok',
+      ico: unfTot > 200000 ? '◆' : '●',
+      t: `Unfunded Commitments — ${fmtDf(unfTot)}`,
+      d: `Forward capital obligations across ${d.filter(x=>x.unfunded>0).length} deals. ${unfTot > 200000 ? 'Significant forward demand; verify liquidity runway against SpaceStation call schedule.' : 'Manageable against current liquidity posture.'}`
+    });
+  }
+
+  // R-code gaps
+  const rcFilled = new Set(d.filter(x=>x.rCode).map(x=>x.rCode));
+  const coreRoles = ['R2','R3','R4'];
+  const missing = coreRoles.filter(c => !rcFilled.has(c));
+  if (missing.length > 0) {
+    flags.push({
+      type: 'warn',
+      ico: '○',
+      t: `R-Code Gap — ${missing.join(', ')} Empty`,
+      d: `Five-Sleeve Architecture missing coverage in core income-generating roles. ${missing.includes('R3') ? 'R3 (High-Yield Private) empty — Asilia or equivalent private credit recommended per GC Framework.' : ''}${missing.includes('R2') ? 'R2 (Anchor Income) empty.' : ''}`
+    });
+  }
+
+  document.getElementById('flags').innerHTML = flags.map(f => `
+    <div class="flag ${f.type}">
+      <div class="flag-ico">${f.ico}</div>
+      <div>
+        <div class="flag-t">${f.t}</div>
+        <div class="flag-d">${f.d}</div>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--s);font-size:11px;padding:4px 0">No portfolio alerts.</div>';
+}
+
+// ============================================================
+// RENDER: Asset Allocation
+// ============================================================
+function renderAlloc() {
+  const d = STATE.deals;
+  const totals = {};
+  d.forEach(x => {
+    const c = x.assetClass || 'Other';
+    totals[c] = (totals[c] || 0) + (x.commitment || 0);
+  });
+  const sum = Object.values(totals).reduce((a,b)=>a+b, 0);
+  const order = ['VC', 'Real Estate', 'Private Equity', 'Private Credit', 'Other'];
+  const rows = order.filter(o => totals[o]).map(o => [o, totals[o]]);
+
+  // Color palette per screenshot: VC purple, RE green, PE blue, Credit amber, Other gray
+  const COLORS = {
+    'VC':              { fill: '#7C3AED', stroke: '#A78BFA' },
+    'Real Estate':     { fill: '#10B981', stroke: '#34D399' },
+    'Private Equity':  { fill: '#3B82F6', stroke: '#60A5FA' },
+    'Private Credit':  { fill: '#F59E0B', stroke: '#FBBF24' },
+    'Other':           { fill: '#6B7280', stroke: '#9CA3AF' },
+  };
+
+  if (sum === 0 || rows.length === 0) {
+    document.getElementById('alloc').innerHTML = '<div class="empty-state">No committed deals yet.</div>';
+    return;
+  }
+
+  // Donut SVG geometry
+  const cx = 130, cy = 130, r_outer = 110, r_inner = 70;
+  let cumAngle = -Math.PI / 2; // start at top
+  const arcs = rows.map(([label, val]) => {
+    const frac = val / sum;
+    const angle = frac * Math.PI * 2;
+    const a0 = cumAngle;
+    const a1 = cumAngle + angle;
+    cumAngle = a1;
+    // Arc path
+    const x0o = cx + r_outer * Math.cos(a0);
+    const y0o = cy + r_outer * Math.sin(a0);
+    const x1o = cx + r_outer * Math.cos(a1);
+    const y1o = cy + r_outer * Math.sin(a1);
+    const x0i = cx + r_inner * Math.cos(a1);
+    const y0i = cy + r_inner * Math.sin(a1);
+    const x1i = cx + r_inner * Math.cos(a0);
+    const y1i = cy + r_inner * Math.sin(a0);
+    const largeArc = angle > Math.PI ? 1 : 0;
+    const path = `M ${x0o} ${y0o} A ${r_outer} ${r_outer} 0 ${largeArc} 1 ${x1o} ${y1o} L ${x0i} ${y0i} A ${r_inner} ${r_inner} 0 ${largeArc} 0 ${x1i} ${y1i} Z`;
+    // Label position (mid arc, midway between rings)
+    const midA = (a0 + a1) / 2;
+    const labelR = (r_outer + r_inner) / 2;
+    const labelX = cx + labelR * Math.cos(midA);
+    const labelY = cy + labelR * Math.sin(midA);
+    const pct = (frac * 100);
+    const showLabel = pct >= 5;
+    return { label, val, frac, path, labelX, labelY, pct, color: COLORS[label] || COLORS['Other'], showLabel };
+  });
+
+  const sumK = sum >= 1000000 ? '$' + (sum/1000000).toFixed(2) + 'M' : '$' + Math.round(sum/1000) + 'k';
+
+  const svgHTML = `
+    <svg viewBox="0 0 260 260" width="260" height="260" style="display:block;margin:0 auto">
+      <defs>
+        ${arcs.map((a, i) => `
+          <linearGradient id="grad-${i}" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="${a.color.stroke}" />
+            <stop offset="100%" stop-color="${a.color.fill}" />
+          </linearGradient>
+        `).join('')}
+      </defs>
+      ${arcs.map((a, i) => `
+        <path d="${a.path}" fill="url(#grad-${i})" stroke="${C_INK}" stroke-width="2" />
+      `).join('')}
+      ${arcs.filter(a => a.showLabel).map(a => `
+        <text x="${a.labelX}" y="${a.labelY}" fill="#fff" font-size="14" font-weight="700" text-anchor="middle" dominant-baseline="middle" font-family="IBM Plex Sans">${a.pct.toFixed(0)}%</text>
+      `).join('')}
+      <text x="${cx}" y="${cy - 8}" fill="#7A90B0" font-size="9" letter-spacing="2" font-weight="600" text-anchor="middle" font-family="IBM Plex Mono">COMMITTED</text>
+      <text x="${cx}" y="${cy + 12}" fill="#E8EFF8" font-size="20" font-weight="700" text-anchor="middle" font-family="IBM Plex Sans">${sumK}</text>
+    </svg>
+    <div class="alloc-legend">
+      <div class="alloc-legend-l">COMMITTED $</div>
+      ${arcs.map(a => `
+        <div class="alloc-legend-item">
+          <span class="alloc-legend-sw" style="background:${a.color.fill}"></span>
+          <span class="alloc-legend-name">${a.label}</span>
+          <span class="alloc-legend-val">${fmtDf(a.val)}</span>
+          <span class="alloc-legend-pct">${a.pct.toFixed(1)}%</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('alloc').innerHTML = svgHTML;
+}
+
+// ============================================================
+// RENDER: R-Code Coverage Grid
+// ============================================================
+function renderRCode() {
+  const counts = {};
+  const sums = {};
+  STATE.deals.forEach(x => {
+    if (x.rCode) {
+      counts[x.rCode] = (counts[x.rCode] || 0) + 1;
+      sums[x.rCode] = (sums[x.rCode] || 0) + (x.commitment || 0);
+    }
+  });
+  const ctx = (STATE.context || {});
+
+  document.getElementById('rcgrid').innerHTML = R_CODES.map(r => {
+    const n = counts[r.code] || 0;
+    const s = sums[r.code] || 0;
+    const c = ctx[r.code]; // optional R0/R1 context
+    const isFilled = n > 0 || (c && (c.value || c.count));
+
+    let detailHTML = '';
+    if (n > 0) {
+      detailHTML = `<div class="rc-detail">${n} deal${n>1?'s':''} · ${fmtDf(s)}</div>`;
+    } else if (c && (c.value || c.count)) {
+      // Context cell (typically R0/R1 — IRA A cash and equities)
+      const lines = [];
+      if (c.count != null) lines.push(`<div class="rc-detail">${c.count} ${c.countLabel || 'positions'}</div>`);
+      if (c.value != null) lines.push(`<div class="rc-detail">${fmtDf(c.value)}</div>`);
+      if (c.sub) lines.push(`<div class="rc-sub">${c.sub}</div>`);
+      detailHTML = lines.join('');
+    } else {
+      detailHTML = `<div class="rc-detail rc-empty-label">empty</div>`;
+    }
+
+    return `<div class="rc ${isFilled ? 'filled' : 'empty'}" title="${r.name}">
+      <div class="rc-code">${r.code}</div>
+      <div class="rc-body">
+        <div class="rc-name">${r.name}</div>
+        ${detailHTML}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: Liquidity Ladder
+// ============================================================
+function renderLadder() {
+  const thisYr = new Date().getFullYear();
+
+  // Determine the year range needed based on actual deal data
+  function expectedYear(d) {
+    if (d.expectedReturnDate) {
+      if (typeof d.expectedReturnDate === 'number') return d.expectedReturnDate;
+      const m = String(d.expectedReturnDate).match(/(\d{4})/);
+      if (m) return parseInt(m[1]);
+    }
+    // Derive from Date Funded + Target Horizon (yrs)
+    if (d.dateFunded && d.horizonYrs) {
+      const dt = new Date(d.dateFunded);
+      if (!isNaN(dt)) return dt.getFullYear() + Number(d.horizonYrs);
+    }
+    // Or from Date Committed + Horizon
+    if (d.dateCommitted && d.horizonYrs) {
+      const dt = new Date(d.dateCommitted);
+      if (!isNaN(dt)) return dt.getFullYear() + Number(d.horizonYrs);
+    }
+    return null;
+  }
+
+  // Compute deal-year mapping first
+  const dealYears = STATE.deals.map(d => ({ d, y: expectedYear(d) })).filter(x => x.y);
+  if (dealYears.length === 0) {
+    document.getElementById('ladder').innerHTML = '<div class="empty-state">No deals with expected return dates yet.</div>';
+    return;
+  }
+  const minYr = Math.min(thisYr, ...dealYears.map(x => x.y));
+  const maxYr = Math.max(thisYr, ...dealYears.map(x => x.y));
+
+  const yearBuckets = {};
+  for (let y = minYr; y <= maxYr; y++) yearBuckets[y] = [];
+  dealYears.forEach(({ d, y }) => { if (yearBuckets[y]) yearBuckets[y].push(d); });
+
+  const classColor = { 'Real Estate':'linear-gradient(90deg,#059669,#34D399)', 'Private Equity':'linear-gradient(90deg,#2563EB,#60A5FA)', 'VC':'linear-gradient(90deg,#7C3AED,#A78BFA)', 'Private Credit':'linear-gradient(90deg,#D97706,#FCD34D)' };
+
+  // Helper: format a dollar amount in compact $k / $M notation
+  const fmtCompact = (n) => {
+    if (n == null) return '—';
+    const abs = Math.abs(n);
+    if (abs >= 1000000) return '$' + (n/1000000).toFixed(1).replace(/\.0$/, '') + 'M';
+    if (abs >= 1000) return '$' + Math.round(n/1000) + 'k';
+    return '$' + n;
+  };
+
+  // Determine the maximum anticipated/committed value for proportional bar sizing
+  const maxBarValue = Math.max(...STATE.deals.map(d => Number(d.anticipatedValue) || Number(d.commitment) || 0), 1);
+
+  document.getElementById('ladder').innerHTML = Object.entries(yearBuckets).map(([yr, deals]) => `
+    <div class="ladder-col">
+      ${deals.map(d => {
+        const nm = d.name.length > 14 ? d.name.slice(0,12)+'…' : d.name;
+        // Prefer anticipated value (the expected return amount); fall back to commitment.
+        const barValue = Number(d.anticipatedValue) || Number(d.commitment) || 0;
+        const amtLabel = fmtCompact(barValue);
+        const isAnticipated = d.anticipatedValue != null;
+        // Tooltip shows both committed and anticipated for clarity
+        const tipParts = [d.name];
+        if (d.commitment) tipParts.push('committed: ' + fmtDf(d.commitment));
+        if (d.anticipatedValue) tipParts.push('anticipated: ' + fmtDf(d.anticipatedValue));
+        if (d.expectedMoic) tipParts.push('expected MOIC: ' + Number(d.expectedMoic).toFixed(2) + 'x');
+        const title = tipParts.join(' · ');
+        // Bar height proportional to anticipated/committed value, min 28px max 56px
+        const heightPx = Math.max(28, Math.min(56, 28 + (barValue / maxBarValue) * 28));
+        return `<div class="ladder-bar" style="background:${classColor[d.assetClass]||'#374151'};min-height:${heightPx}px" title="${title}"><div class="ladder-bar-name">${nm}</div><div class="ladder-bar-amt">${amtLabel}${isAnticipated ? ' <span style="opacity:.65">exp</span>' : ''}</div></div>`;
+      }).join('')}
+      <div class="ladder-year ${parseInt(yr) === thisYr ? 'current':''}">${yr}</div>
+    </div>
+  `).join('');
+}
+
+// ============================================================
+// RENDER: Capital Call & Distribution Flow (quarterly bars)
+//
+// Data sources (combined):
+//   1. STATE.cashflowChart — projected/scheduled quarterly flow from
+//      the CashFlow_Chart sheet (or seed). Provides forward-looking
+//      contributions, capital calls, and projected distributions.
+//   2. STATE.deals[i].distributions — realized lifetime distributions
+//      received per deal (from Investments sheet). When set, the delta
+//      vs. CashFlow_Chart projection is added to the current quarter
+//      to reflect "money already received."
+//
+// This way: editing CashFlow_Chart updates the bars (sheet-driven),
+// AND editing a deal's Distributions ($) cell also updates the bars
+// (deal-driven). Both routes work.
+// ============================================================
+function renderCashflow() {
+  let buckets = [];
+  const now = new Date();
+  const thisQ = Math.floor(now.getMonth() / 3) + 1;
+  const thisY = now.getFullYear();
+  const quarterKey = (y, q) => `Q${q} ${y}`;
+
+  // 1) Build base buckets from CashFlow_Chart sheet (or fallback to projection)
+  if (STATE.cashflowChart && Array.isArray(STATE.cashflowChart) && STATE.cashflowChart.length) {
+    buckets = STATE.cashflowChart.map(row => {
+      const m = String(row.quarter).match(/Q([1-4])\s+(\d{4})/);
+      const q = m ? parseInt(m[1]) : null;
+      const y = m ? parseInt(m[2]) : null;
+      const isPast = q && y && (y < thisY || (y === thisY && q < thisQ));
+      const isCurrent = q && y && (y === thisY && q === thisQ);
+      // "Calls" in our chart is contributions + capital calls (both outflows)
+      const calls = Math.abs(Number(row.contributions) || 0) + Math.abs(Number(row.capitalCalls) || 0);
+      const dists = Math.abs(Number(row.distributions) || 0);
+      return { key: row.quarter, year: y, quarter: q, isPast, isCurrent, calls, dists };
+    });
+  } else {
+    // Fallback: derive 16 quarters of buckets from now
+    let qY = thisY, qQ = thisQ - 2;
+    while (qQ < 1) { qQ += 4; qY -= 1; }
+    for (let i = 0; i < 16; i++) {
+      const isPast = (qY < thisY) || (qY === thisY && qQ < thisQ);
+      const isCurrent = (qY === thisY && qQ === thisQ);
+      buckets.push({ key: quarterKey(qY, qQ), year: qY, quarter: qQ, isPast, isCurrent, calls: 0, dists: 0 });
+      qQ += 1; if (qQ > 4) { qQ = 1; qY += 1; }
+    }
+    function dateToQ(dStr) {
+      if (!dStr) return null;
+      if (typeof dStr === 'string' && dStr.match(/^Q[1-4] \d{4}$/)) {
+        const m = dStr.match(/^Q([1-4]) (\d{4})$/);
+        return { year: parseInt(m[2]), quarter: parseInt(m[1]) };
+      }
+      const dt = new Date(dStr);
+      if (isNaN(dt)) return null;
+      return { year: dt.getFullYear(), quarter: Math.floor(dt.getMonth() / 3) + 1 };
+    }
+    function findIdx(y, q) { return buckets.findIndex(b => b.year === y && b.quarter === q); }
+    STATE.deals.forEach(d => {
+      if (d.nextCapitalCall && d.nextCapitalCall.date && d.nextCapitalCall.amount) {
+        const q = dateToQ(d.nextCapitalCall.date);
+        if (q) { const idx = findIdx(q.year, q.quarter); if (idx >= 0) buckets[idx].calls += d.nextCapitalCall.amount; }
+      }
+      if (d.nextDistribution && d.nextDistribution.date && d.nextDistribution.expectedAmount) {
+        const q = dateToQ(d.nextDistribution.date);
+        if (q) {
+          const idx = findIdx(q.year, q.quarter);
+          if (idx >= 0) {
+            for (let i = idx; i < buckets.length; i++) buckets[i].dists += d.nextDistribution.expectedAmount;
+          }
+        }
+      }
+    });
+  }
+
+  // 2) OVERLAY: Add per-deal realized distributions to the current quarter.
+  //    This is the bug fix: when a user edits Investments.Distributions ($),
+  //    the cashflow chart should reflect it. We add deal-level distributions
+  //    to the most recent quarter (current quarter if available, else last
+  //    past quarter in the bucket list).
+  const totalDealDistributions = STATE.deals.reduce((s, d) => s + (Number(d.distributions) || 0), 0);
+  if (totalDealDistributions > 0) {
+    // Find or create a "current quarter" bucket
+    let realizedIdx = buckets.findIndex(b => b.isCurrent);
+    if (realizedIdx < 0) {
+      // Use the latest past quarter
+      for (let i = buckets.length - 1; i >= 0; i--) {
+        if (buckets[i].isPast) { realizedIdx = i; break; }
+      }
+    }
+    if (realizedIdx < 0 && buckets.length > 0) realizedIdx = buckets.length - 1;
+    if (realizedIdx < 0) {
+      // No buckets exist — synthesize a current-quarter bucket
+      buckets.push({ key: quarterKey(thisY, thisQ), year: thisY, quarter: thisQ, isPast: false, isCurrent: true, calls: 0, dists: 0 });
+      realizedIdx = 0;
+    }
+    buckets[realizedIdx].dists += totalDealDistributions;
+    buckets[realizedIdx].realizedTagAmount = totalDealDistributions;
+  }
+
+  // Render
+  const allValues = buckets.flatMap(b => [b.calls, b.dists]);
+  const maxVal = Math.max(...allValues, 1);
+
+  document.getElementById('cashflow').innerHTML = buckets.map(b => {
+    const callH = b.calls > 0 ? Math.max(3, (b.calls / maxVal) * 110) : 0;
+    const distH = b.dists > 0 ? Math.max(3, (b.dists / maxVal) * 110) : 0;
+    const callFmt = b.calls >= 1000 ? '$' + Math.round(b.calls / 1000) + 'k' : '$' + b.calls;
+    const distFmt = b.dists >= 1000 ? '$' + Math.round(b.dists / 1000) + 'k' : (b.dists > 0 ? '$' + b.dists : '');
+    const realizedTag = b.realizedTagAmount ? ' (incl. $' + Math.round(b.realizedTagAmount / 1000) + 'k realized)' : '';
+    const distTitle = b.dists > 0 ? 'Distributions: ' + fmtDf(b.dists) + realizedTag : '';
+    return `
+      <div class="cf-q ${b.isPast ? 'past' : ''} ${b.isCurrent ? 'current' : ''}">
+        <div class="cf-q-bars">
+          ${b.calls > 0 ? `<div class="cf-q-bar-wrap call"><div class="cf-q-bar-amt">${callFmt}</div><div class="cf-q-bar call" style="height:${callH}px" title="Capital Calls: ${fmtDf(b.calls)}"></div></div>` : ''}
+          ${b.dists > 0 ? `<div class="cf-q-bar-wrap dist"><div class="cf-q-bar-amt">${distFmt}</div><div class="cf-q-bar dist" style="height:${distH}px" title="${distTitle}"></div></div>` : ''}
+        </div>
+        <div class="cf-q-label">${b.key}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ============================================================
+// RENDER: Deal Groups
+// ============================================================
+function renderGroups() {
+  const groups = {};
+  STATE.deals.forEach(d => {
+    const g = d.assetClass || 'Other';
+    (groups[g] = groups[g] || []).push(d);
+  });
+  const order = ['Private Credit', 'Real Estate', 'Private Equity', 'VC', 'Other'];
+  const sortedGroups = Object.entries(groups).sort((a,b) => {
+    const ai = order.indexOf(a[0]); const bi = order.indexOf(b[0]);
+    return (ai===-1?99:ai) - (bi===-1?99:bi);
+  });
+
+  document.getElementById('groups').innerHTML = sortedGroups.map(([gname, deals]) => {
+    const commit = deals.reduce((a,x)=>a+(x.commitment||0),0);
+    const funded = deals.reduce((a,x)=>a+(x.funded||0),0);
+    return `
+      <div class="group">
+        <div class="group-hdr">
+          <div class="group-name">${gname} · ${deals.length} deal${deals.length>1?'s':''}</div>
+          <div class="group-tot">${fmtDf(funded)} funded / ${fmtDf(commit)} committed</div>
+        </div>
+        <div class="deals">
+          ${deals.sort((a,b)=>(b.funded||0)-(a.funded||0)).map(d => renderDealCard(d)).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Attach click handlers
+  document.querySelectorAll('.deal').forEach(el => {
+    el.addEventListener('click', (e) => {
+      if (e.target.closest('.btn,input,select,textarea,.det-row')) return;
+      const id = el.dataset.id;
+      if (expandedDeals.has(id)) expandedDeals.delete(id);
+      else expandedDeals.add(id);
+      renderGroups();
+    });
+  });
+}
+
+function renderDealCard(d) {
+  const isExp = expandedDeals.has(d.id);
+  const sizeFunded = d.commitment > 0 ? (d.funded / d.commitment * 100) : 0;
+  const sizeUnf = d.commitment > 0 ? (d.unfunded / d.commitment * 100) : 0;
+
+  // Next event logic
+  let eventHTML = '';
+  if (d.nextCapitalCall && d.nextCapitalCall.date) {
+    eventHTML = `<div class="d-event">
+      <div class="d-event-l">NEXT CALL</div>
+      <div class="d-event-v"><span class="d-event-amt">${fmtDf(d.nextCapitalCall.amount)}</span> · ${d.nextCapitalCall.date}</div>
+    </div>`;
+  } else if (d.nextDistribution && d.nextDistribution.date) {
+    eventHTML = `<div class="d-event">
+      <div class="d-event-l">NEXT DIST</div>
+      <div class="d-event-v"><span class="d-event-dist">~${fmtDf(d.nextDistribution.expectedAmount)}</span> · ${d.nextDistribution.date}</div>
+    </div>`;
+  } else if (d.unfunded > 0) {
+    eventHTML = `<div class="d-event">
+      <div class="d-event-l">PENDING</div>
+      <div class="d-event-v"><span class="d-event-amt">${fmtDf(d.unfunded)}</span> unfunded</div>
+    </div>`;
+  } else {
+    eventHTML = `<div class="d-event">
+      <div class="d-event-l">PRIV_EXP RETURN</div>
+      <div class="d-event-v muted">${d.expectedReturnDate || '—'}</div>
+    </div>`;
+  }
+
+  return `
+    <div class="deal ${isExp?'expanded':''}" data-id="${d.id}">
+      <div class="deal-row">
+        <div class="score ${scoreClass(d.gcScore)}">
+          <div class="score-n">${d.gcScore != null ? d.gcScore : '—'}</div>
+          <div class="score-l">${scoreLabel(d.gcScore)}</div>
+        </div>
+        <div>
+          <div class="d-name">${d.name}</div>
+          <div class="d-meta">
+            <span class="tag">${d.id}</span>
+            ${d.rCode ? `<span class="tag rcode">${d.rCode} · ${d.rCodeLabel||''}</span>` : ''}
+            <span class="tag acct">${d.account || '—'}</span>
+            <span class="tag ${statusTag(displayStatus(d))}">${displayStatus(d)}</span>
+            ${d.vehicle ? `<span class="tag">${d.vehicle}</span>` : ''}
+          </div>
+        </div>
+        <div class="d-tier">
+          <strong>${tierLabel(d.gcScore)}</strong>
+          ${d.convictionTier || ''}
+        </div>
+        <div class="d-size">
+          <div class="d-size-bar">
+            <div class="d-size-fund" style="width:${sizeFunded}%"></div>
+            <div class="d-size-unf" style="width:${sizeUnf}%"></div>
+          </div>
+          <div class="d-size-labels">
+            <span><span class="d-size-funded">${fmtDf(d.funded)}</span> funded</span>
+            <span>${fmtDf(d.commitment)}</span>
+          </div>
+        </div>
+        ${eventHTML}
+        <div class="d-chev">
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><polyline points="5 8 10 13 15 8"></polyline></svg>
+        </div>
+      </div>
+      ${isExp ? renderDealDetail(d) : ''}
+    </div>
+  `;
+}
+
+function renderDealDetail(d) {
+  const drivers = (d.returnDrivers || []);
+  const followUps = (d.followUps || []);
+  const radar = d.convictionBreakdown ? renderRadar(d.convictionBreakdown) : '';
+
+  return `
+    <div class="detail">
+      <div>
+        ${d.killerRisk ? `
+          <div class="det-section">
+            <div class="det-hdr"><div class="det-title">◆ Killer Risk</div></div>
+            <div class="killer">
+              <div class="killer-l">Dominant Risk</div>
+              <div class="killer-v">${d.killerRisk}</div>
+            </div>
+          </div>` : ''}
+
+        ${drivers.length > 0 ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">▲ Return Drivers</div></div>
+            <div class="drivers">
+              ${drivers.map(dr => `<div class="driver">
+                <div class="driver-n">${dr.name || dr.mechanism || ''}</div>
+                <div>${dr.detail || ''}</div>
+              </div>`).join('')}
+            </div>
+          </div>` : ''}
+
+        ${d.capitalDestructionScenario ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">▽ Capital Destruction Scenario</div></div>
+            <div style="font-size:12px; line-height:1.55; color:var(--s)">${d.capitalDestructionScenario}</div>
+          </div>` : ''}
+
+        ${followUps.length > 0 ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">? Open Follow-Ups</div></div>
+            <div class="followups">
+              ${followUps.map(f => `<div class="fu ${f.status==='closed'?'closed':''}">
+                <div class="fu-type">${f.type || ''} ${f.status==='closed'?'· answered':''}</div>
+                <div class="fu-q">${f.q || f.question || ''}</div>
+              </div>`).join('')}
+            </div>
+          </div>` : ''}
+      </div>
+
+      <div>
+        <div class="det-section">
+          <div class="det-hdr"><div class="det-title">Core Data</div></div>
+          <div class="det-row"><span class="det-row-l">Sponsor</span><span class="det-row-v">${d.sponsor || '—'}</span></div>
+          <div class="det-row"><span class="det-row-l">Sub-strategy</span><span class="det-row-v">${d.subStrategy || '—'}</span></div>
+          <div class="det-row"><span class="det-row-l">Date committed</span><span class="det-row-v">${(d.dateCommitted||'—').slice(0,10)}</span></div>
+          <div class="det-row"><span class="det-row-l">Date funded</span><span class="det-row-v">${(d.dateFunded||'—').toString().slice(0,10) || '—'}</span></div>
+          <div class="det-row"><span class="det-row-l">Lockup</span><span class="det-row-v">${d.lockupYrs || '—'} yrs</span></div>
+          <div class="det-row"><span class="det-row-l">Target horizon</span><span class="det-row-v">${d.horizonYrs || '—'} yrs</span></div>
+          <div class="det-row"><span class="det-row-l">Expected return</span><span class="det-row-v">${d.expectedReturnDate || '—'}</span></div>
+          <div class="det-row"><span class="det-row-l">Current value</span><span class="det-row-v">${fmtDf(d.currentValue)}</span></div>
+          <div class="det-row"><span class="det-row-l">Distributions</span><span class="det-row-v">${fmtDf(d.distributions)}</span></div>
+          <div class="det-row"><span class="det-row-l">Anticipated value</span><span class="det-row-v">${fmtDf(d.anticipatedValue)}</span></div>
+        </div>
+
+        ${d.sizingRange ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">◉ GC Sizing Rationale</div></div>
+            <div class="det-row"><span class="det-row-l">Range</span><span class="det-row-v">${fmtDf(d.sizingRange.low)} – ${fmtDf(d.sizingRange.high)}</span></div>
+            <div class="det-row"><span class="det-row-l">Recommended</span><span class="det-row-v">${fmtDf(d.sizingRange.recommended)}</span></div>
+            ${d.regretVerdict ? `<div class="det-row"><span class="det-row-l">Regret check</span><span class="det-row-v verdict"><span class="verdict-pill ${d.regretVerdict.toLowerCase().includes('resistant') ? 'resistant' : d.regretVerdict.toLowerCase().includes('oversized')?'oversized':'under'}">${d.regretVerdict}</span></span></div>` : ''}
+          </div>` : ''}
+
+        ${radar ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">◎ Conviction Breakdown</div></div>
+            <div class="radar-wrap">${radar}</div>
+          </div>` : ''}
+
+        ${d.regretCheck ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">✓ Final Regret Check</div></div>
+            <div style="font-size:12px;line-height:1.55;color:var(--s)">${d.regretCheck}</div>
+          </div>` : ''}
+
+        ${d.portfolioRole ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">◆ Portfolio Role</div></div>
+            <div style="font-size:12px;line-height:1.55">${d.portfolioRole}</div>
+          </div>` : ''}
+
+        ${d.notes ? `
+          <div class="det-section" style="margin-top:12px">
+            <div class="det-hdr"><div class="det-title">Notes</div></div>
+            <div style="font-size:12px;line-height:1.5;color:var(--s)">${d.notes}</div>
+          </div>` : ''}
+      </div>
+    </div>
+  `;
+}
+
+// ============================================================
+// RENDER: Radar Chart (conviction breakdown)
+// ============================================================
+function renderRadar(cb) {
+  const dims = [
+    { k:'team', label:'Team' },
+    { k:'market', label:'Market' },
+    { k:'unitEcon', label:'Unit Econ' },
+    { k:'dealStructure', label:'Structure' },
+    { k:'downside', label:'Downside' },
+    { k:'time', label:'Time' },
+    { k:'complexity', label:'Complexity' },
+    { k:'portfolioFit', label:'Fit' },
+    { k:'scalability', label:'Scale' },
+    { k:'exitClarity', label:'Exit' },
+  ];
+  const size = 220, cx = size/2, cy = size/2, r = 90;
+  const n = dims.length;
+  const points = dims.map((d, i) => {
+    const v = (cb[d.k] || 0) / 10;
+    const ang = (Math.PI * 2 * i / n) - Math.PI/2;
+    return { x: cx + Math.cos(ang)*r*v, y: cy + Math.sin(ang)*r*v, label: d.label, val: cb[d.k]||0, ax: cx + Math.cos(ang)*(r+14), ay: cy + Math.sin(ang)*(r+14), angle:ang };
+  });
+  // Grid rings
+  const rings = [0.2, 0.4, 0.6, 0.8, 1.0].map(pct => {
+    const ringPts = dims.map((_,i)=>{
+      const ang = (Math.PI * 2 * i / n) - Math.PI/2;
+      return `${cx + Math.cos(ang)*r*pct},${cy + Math.sin(ang)*r*pct}`;
+    }).join(' ');
+    return `<polygon points="${ringPts}" fill="none" stroke="#2A3F5F" stroke-width="0.5" />`;
+  }).join('');
+  const axes = dims.map((_,i)=>{
+    const ang = (Math.PI * 2 * i / n) - Math.PI/2;
+    return `<line x1="${cx}" y1="${cy}" x2="${cx + Math.cos(ang)*r}" y2="${cy + Math.sin(ang)*r}" stroke="#1E2D45" stroke-width="0.5" />`;
+  }).join('');
+  const poly = points.map(p => `${p.x},${p.y}`).join(' ');
+  const labels = points.map(p => `<text x="${p.ax}" y="${p.ay}" fill="#7A90B0" font-size="8" text-anchor="middle" font-family="IBM Plex Mono">${p.label}<tspan fill="#FCD34D" x="${p.ax}" dy="10" font-size="9">${p.val}</tspan></text>`).join('');
+  return `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size+10}">
+    ${rings}
+    ${axes}
+    <polygon points="${poly}" fill="rgba(217,119,6,0.15)" stroke="#FCD34D" stroke-width="1.5" />
+    ${points.map(p=>`<circle cx="${p.x}" cy="${p.y}" r="2.5" fill="#FCD34D" />`).join('')}
+    ${labels}
+  </svg>`;
+}
+
+
+// ============================================================
+// SYNC (merge XLSX into state)
+// ============================================================
+//
+// Field equality helper used by sync diff logic.
+// Treats null/undefined/0/empty-string-on-numeric as equivalent only
+// in unambiguous cases. Numeric near-equality within 0.0001.
+// String trim before compare. Dates compared by ISO string.
+// ============================================================
+function fieldsEqual(a, b) {
+  if (a === b) return true;
+  if (a == null && b == null) return true;
+  if (a == null && b === '') return true;
+  if (a === '' && b == null) return true;
+  if (typeof a === 'number' && typeof b === 'number') {
+    return Math.abs(a - b) < 0.0001;
+  }
+  if (typeof a === 'string' && typeof b === 'string') {
+    // Normalize line endings (CRLF→LF) and collapse whitespace before compare.
+    // Excel/openpyxl/SheetJS sometimes serialize newlines differently across saves;
+    // these are not user-meaningful changes.
+    const norm = (s) => s.replace(/\r\n?/g, '\n').replace(/[ \t]+/g, ' ').trim();
+    return norm(a) === norm(b);
+  }
+  if (a instanceof Date || b instanceof Date) {
+    const sa = a instanceof Date ? a.toISOString() : String(a);
+    const sb = b instanceof Date ? b.toISOString() : String(b);
+    return sa.slice(0, 10) === sb.slice(0, 10);
+  }
+  return false;
+}
+
+function handleFile(file) {
+  if (typeof XLSX === 'undefined') {
+    alert('Spreadsheet parsing library failed to load.\n\nMake sure you have an internet connection on first open. After the library loads once, it will be cached for offline use.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = new Uint8Array(e.target.result);
+      const wb = XLSX.read(data, { type: 'array', cellDates: true });
+      const sheet = wb.Sheets['Investments'];
+      if (!sheet) { alert('No "Investments" sheet found'); return; }
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: null, header: 1 });
+      // Find header row (contains "Deal ID")
+      let hdrIdx = rows.findIndex(r => r && r[0] === 'Deal ID');
+      if (hdrIdx === -1) { alert('Header row with "Deal ID" not found'); return; }
+      const headers = rows[hdrIdx];
+      const dealRows = rows.slice(hdrIdx + 1).filter(r => r && r[0]);
+
+      // Header map handles both v3 ("Asset Class") and v4 ("Deal Type" + "Portfolio Role") schemas.
+      const headerMap = {
+        'Deal ID':'id','Deal Name':'name','Sponsor/Manager':'sponsor',
+        'Asset Class':'assetClass','Deal Type':'assetClass',  // both alias to assetClass
+        'VS Stage':'vsStage',
+        'Portfolio Role':'portfolioRoleRaw',                   // raw "R3-High-Yield..." string from sheet
+        'Deal Status':'dealStatusOpen',                        // open/closed deal flow state
+        'Sub-Strategy':'subStrategy','Vehicle Type':'vehicle','Account Type':'account',
+        'Entity/Title':'entity','Tax Bucket (est.)':'taxBucket',
+        'Date Committed':'dateCommitted','Date Funded':'dateFunded',
+        'Commitment ($)':'commitment','Amount Funded ($)':'funded','Unfunded ($)':'unfunded',
+        'Capital Call Schedule':'capitalCallSchedule',
+        'Lockup (yrs)':'lockupYrs','Target Horizon (yrs)':'horizonYrs','Status':'status',
+        'Current Value ($)':'currentValue','Current Value':'currentValue',
+        'Distributions ($)':'distributions','Distribution Schedule/Notes':'distScheduleNotes',
+        'Total Value ($)':'totalValue',
+        'Anticipated Value ($)':'anticipatedValue','Expected Return Date':'expectedReturnDate',
+        'Expected ARR':'expectedArr','Expected MOIC':'expectedMoic',
+        'Actual MOIC':'actualMoic',
+        'MOIC':'moicSheet','CAGR (simple)':'cagrSheet',
+        'Notes':'notes','Source / Link':'sourceLink',
+        'Contact':'contact','Contact Info':'contactInfo',
+      };
+
+      const parsed = dealRows.map(row => {
+        const o = {};
+        headers.forEach((h,i) => {
+          const k = headerMap[h];
+          if (k) {
+            let v = row[i];
+            if (v instanceof Date) v = v.toISOString().slice(0,10);
+            o[k] = v;
+          }
+        });
+        // Derive rCode and rCodeLabel from raw Portfolio Role string in sheet (e.g. "R3-High-Yield Private Credit")
+        if (o.portfolioRoleRaw) {
+          const m = String(o.portfolioRoleRaw).match(/^(R\d)\s*[-—·]?\s*(.+)$/);
+          if (m) {
+            o.rCode = m[1];
+            o.rCodeLabel = m[2].trim();
+          }
+          o.portfolioRole = o.portfolioRoleRaw;
+        }
+        delete o.portfolioRoleRaw;
+        return o;
+      });
+
+      // Read GC_Framework sheet if present (qualitative memo-derived fields)
+      const gcfSheet = wb.Sheets['GC_Framework'];
+      const gcfData = {};
+      if (gcfSheet) {
+        const gcfRows = XLSX.utils.sheet_to_json(gcfSheet, { defval: null, header: 1 });
+        const gcfHdrIdx = gcfRows.findIndex(r => r && r[0] === 'Deal ID');
+        if (gcfHdrIdx > -1) {
+          const gcfHdrs = gcfRows[gcfHdrIdx];
+          const GCF_MAP = {
+            'Deal ID':'id',
+            'GC Score (0-100)':'gcScore',
+            'R-Code':'rCode',                            // canonical R-code from GC_Framework
+            'R-Code Label':'rCodeLabel',
+            'Conviction Tier':'convictionTier',
+            'Confidence':'confidence',
+            'Portfolio Role':'portfolioRole',
+            'Killer Risk':'killerRisk',                  // v4 header
+            'Dominant Risk / Killer Risk':'killerRisk',  // legacy alias
+            'Regret Resistant':'regretVerdict',
+            'Regret Verdict':'regretVerdict',
+            'Sizing Low ($)':'sizingLow',
+            'Sizing High ($)':'sizingHigh',
+            'Sizing Recommended ($)':'sizingRec',
+            'Next Call Date':'_ncDate',
+            'Next Call Amount ($)':'_ncAmount',
+            'Memo Iteration':'memoIteration',
+            'Memo Date':'memoDate',
+            'Notes / Anchor':'memoNotes',
+          };
+          gcfRows.slice(gcfHdrIdx + 1).filter(r => r && r[0]).forEach(row => {
+            const o = {};
+            gcfHdrs.forEach((h,i) => {
+              const k = GCF_MAP[h];
+              if (k) {
+                let v = row[i];
+                if (v instanceof Date) v = v.toISOString().slice(0,10);
+                if (v != null && v !== '') o[k] = v;
+              }
+            });
+            // Bundle next call into nested object
+            if (o._ncDate || o._ncAmount) {
+              o.nextCapitalCall = { date: o._ncDate, amount: o._ncAmount };
+              delete o._ncDate; delete o._ncAmount;
+            }
+            if (o.sizingLow != null || o.sizingHigh != null || o.sizingRec != null) {
+              o.sizingRange = { low: o.sizingLow, high: o.sizingHigh, recommended: o.sizingRec };
+              delete o.sizingLow; delete o.sizingHigh; delete o.sizingRec;
+            }
+            if (o.id) gcfData[o.id] = o;
+          });
+        }
+      }
+
+      // Snapshot the previous cashflow chart so we can diff it after the new
+      // version is parsed. Empty array if there was no prior cashflowChart.
+      const prevCashflowMap = {};
+      (STATE.cashflowChart || []).forEach(row => { prevCashflowMap[row.quarter] = row; });
+
+      // ────────────────────────────────────────────────────────────────────
+      // Cashflow chart construction — robust two-layer approach.
+      //
+      // PRIMARY (most accurate): aggregate raw events from the CashFlows tab
+      // into quarterly buckets in JavaScript. This works even when Excel's
+      // formula recalculation cache is stale (e.g., the user edited via a
+      // tool that doesn't recompute formulas on save, or saved while in
+      // manual calculation mode), which would leave the CashFlow_Chart
+      // tab's pre-aggregated cells as null.
+      //
+      // FALLBACK: if there is no CashFlows sheet (old v3-style tracker), or
+      // it is empty, read the pre-aggregated values from CashFlow_Chart.
+      //
+      // Numeric coercion helper — handles strings ("$50,000"), whitespace,
+      // and parenthesized negatives "(50000)" → -50000.
+      // ────────────────────────────────────────────────────────────────────
+      const cfNum = (v) => {
+        if (v == null || v === '') return null;
+        if (typeof v === 'number') return v;
+        let s = String(v).trim();
+        if (s === '') return null;
+        const isParenNeg = /^\(.*\)$/.test(s);
+        if (isParenNeg) s = '-' + s.slice(1, -1);
+        s = s.replace(/[$,\s]/g, '');
+        const n = Number(s);
+        return isNaN(n) ? null : n;
+      };
+
+      let cashflowChart = null;
+
+      // ── PRIMARY: aggregate CashFlows raw events ────────────────────────
+      const cashFlowsSheet = wb.Sheets['CashFlows'];
+      if (cashFlowsSheet) {
+        // Read with cellDates so date columns come back as Date objects
+        const cfRows = XLSX.utils.sheet_to_json(cashFlowsSheet, {
+          defval: null, header: 1, raw: false, cellDates: true
+        });
+        // Find header row (contains "Date","Deal Name","Account Type","Flow Type","Amount ($)")
+        const hdrIdx = cfRows.findIndex(r => r && r[0] === 'Date' && r[3] === 'Flow Type');
+        if (hdrIdx > -1) {
+          // Parse each event row
+          const events = [];
+          for (let i = hdrIdx + 1; i < cfRows.length; i++) {
+            const r = cfRows[i];
+            if (!r) continue;
+            let date = r[0];
+            const flowType = r[3];
+            const amount = cfNum(r[4]);
+            // Skip rows without a usable date or amount
+            if (!date || amount == null || amount === 0) continue;
+            // Coerce date — could be Date object, ISO string, or Excel date number
+            if (!(date instanceof Date)) {
+              if (typeof date === 'number') {
+                // Excel date serial: days since 1899-12-30
+                date = new Date((date - 25569) * 86400 * 1000);
+              } else {
+                date = new Date(date);
+              }
+              if (isNaN(date)) continue;
+            }
+            const year = date.getFullYear();
+            const quarter = Math.floor(date.getMonth() / 3) + 1;
+            events.push({
+              date, year, quarter,
+              dealName: r[1] ? String(r[1]).trim() : '',
+              flowType: flowType ? String(flowType).trim() : '',
+              amount,
+            });
+          }
+
+          // Aggregate by (year, quarter)
+          if (events.length > 0) {
+            // Quarter key helper
+            const qKey = (y, q) => `Q${q} ${y}`;
+            const buckets = new Map();
+
+            // Determine the full quarter range to display: from earliest
+            // event to latest event, inclusive of all intermediate quarters.
+            // This way an empty quarter still shows up as a zero bar so the
+            // timeline is continuous.
+            let minY = Infinity, minQ = 5, maxY = -Infinity, maxQ = 0;
+            events.forEach(e => {
+              if (e.year < minY || (e.year === minY && e.quarter < minQ)) {
+                minY = e.year; minQ = e.quarter;
+              }
+              if (e.year > maxY || (e.year === maxY && e.quarter > maxQ)) {
+                maxY = e.year; maxQ = e.quarter;
+              }
+            });
+
+            // Initialize all quarters in range with zeros
+            let y = minY, q = minQ;
+            while (y < maxY || (y === maxY && q <= maxQ)) {
+              buckets.set(qKey(y, q), {
+                quarter: qKey(y, q),
+                year: y, qNum: q,
+                contributions: 0,
+                capitalCalls: 0,
+                distributions: 0,
+                netCashFlow: 0,
+                cumulativeNet: 0,
+              });
+              q++;
+              if (q > 4) { q = 1; y++; }
+            }
+
+            // Classify each Capital Call as either "Initial" (first call for
+            // that deal in chronological order) or "Ongoing" (subsequent
+            // calls). This matches the v5 spreadsheet's helper-column logic.
+            // We sort capital calls by deal then by date and tag them.
+            const calls = events.filter(e => e.flowType === 'Capital Call');
+            calls.sort((a, b) => {
+              if (a.dealName !== b.dealName) return a.dealName.localeCompare(b.dealName);
+              return a.date - b.date;
+            });
+            const seenDeals = new Set();
+            calls.forEach(e => {
+              if (!seenDeals.has(e.dealName)) {
+                e.callKind = 'Initial';
+                seenDeals.add(e.dealName);
+              } else {
+                e.callKind = 'Ongoing';
+              }
+            });
+
+            // Bucket all events
+            events.forEach(e => {
+              const k = qKey(e.year, e.quarter);
+              const b = buckets.get(k);
+              if (!b) return;  // shouldn't happen, range covers all events
+              if (e.flowType === 'Capital Call') {
+                if (e.callKind === 'Initial') b.contributions += e.amount;
+                else                          b.capitalCalls += e.amount;
+              } else if (e.flowType) {
+                // Anything else (Distribution, Return of Capital, Equity
+                // Created at Exit, Capital at Exit) is an inflow.
+                b.distributions += e.amount;
+              }
+            });
+
+            // Compute Net + Cumulative in chronological order
+            const sortedKeys = Array.from(buckets.keys()).sort((a, b) => {
+              const ba = buckets.get(a), bb = buckets.get(b);
+              return (ba.year - bb.year) || (ba.qNum - bb.qNum);
+            });
+            let cumul = 0;
+            cashflowChart = sortedKeys.map(k => {
+              const b = buckets.get(k);
+              b.netCashFlow = b.contributions + b.capitalCalls + b.distributions;
+              cumul += b.netCashFlow;
+              b.cumulativeNet = cumul;
+              // Strip the helper props before storing
+              return {
+                quarter: b.quarter,
+                contributions: b.contributions,
+                capitalCalls: b.capitalCalls,
+                distributions: b.distributions,
+                netCashFlow: b.netCashFlow,
+                cumulativeNet: b.cumulativeNet,
+              };
+            });
+          }
+        }
+      }
+
+      // ── FALLBACK: read pre-aggregated CashFlow_Chart sheet ────────────
+      // Only used if the CashFlows tab was missing or had no usable events.
+      // For v5+ trackers, we should never get here in practice — but this
+      // preserves compatibility with older trackers that only had the
+      // CashFlow_Chart sheet without raw event data.
+      if (!cashflowChart || cashflowChart.length === 0) {
+        const cfSheet = wb.Sheets['CashFlow_Chart'];
+        if (cfSheet) {
+          const cfRows = XLSX.utils.sheet_to_json(cfSheet, { defval: null, header: 1 });
+          const cfHdrIdx = cfRows.findIndex(r => r && r[0] === 'Quarter');
+          if (cfHdrIdx > -1) {
+            cashflowChart = cfRows.slice(cfHdrIdx + 1)
+              .filter(r => r && r[0] && /^Q[1-4]\s+\d{4}/.test(String(r[0])))
+              .map(r => ({
+                quarter: String(r[0]).trim(),
+                contributions: cfNum(r[1]),
+                capitalCalls: cfNum(r[2]),
+                distributions: cfNum(r[3]),
+                netCashFlow: cfNum(r[4]),
+                cumulativeNet: cfNum(r[5]),
+              }));
+            // Filter out rows where ALL numeric fields are null (empty cache)
+            const nonEmpty = cashflowChart.filter(r =>
+              r.contributions != null || r.capitalCalls != null ||
+              r.distributions != null || r.netCashFlow != null
+            );
+            if (nonEmpty.length === 0) cashflowChart = null;
+            else cashflowChart = nonEmpty;
+          }
+        }
+      }
+
+      // Always replace cashflowChart on a fresh sync (even if the sheet went
+      // empty) — spreadsheet wins, no stale data.
+      STATE.cashflowChart = cashflowChart;
+
+      // Normalize account values — "SD-IRA" and "SDIRA" should be treated identically
+      const normalizeAccount = (v) => {
+        if (!v) return v;
+        const s = String(v).trim();
+        if (/^SD[\s-]?IRA$/i.test(s)) return 'SD-IRA';
+        return s;
+      };
+
+      // MERGE: spreadsheet wins for $/status; preserve any locally-edited GC fields not overwritten by GCF sheet
+      // MERGE STRATEGY (v2):
+      //   - Spreadsheet is authoritative: it is the SOURCE OF TRUTH on every sync.
+      //   - For each deal in the parsed list, we REPLACE the existing entry entirely
+      //     (rather than Object.assign-ing on top of it). Stale fields cannot persist.
+      //   - Deals that exist in STATE but NOT in the parsed file are REMOVED.
+      //     (User deleted a row → deal disappears from dashboard.)
+      //   - Locally-editable memo fields (LOCAL_ONLY_FIELDS) are preserved across syncs:
+      //     these are fields the dashboard exposes via the Add/Edit modal and the
+      //     spreadsheet doesn't have columns for.
+      //   - Numeric coercion on $ fields, with formula-cell fallback for current_value.
+      const LOCAL_ONLY_FIELDS = ['returnDrivers','followUps','convictionBreakdown','capitalDestructionScenario','regretCheck'];
+
+      // Build a map of existing deals by ID so we can preserve LOCAL_ONLY_FIELDS
+      const existingById = {};
+      STATE.deals.forEach(d => { existingById[d.id] = d; });
+
+      // Track separate diff streams:
+      // - dealDiffs: Investments-row level (add/upd/del/same)
+      // - gcfDiffs:  GC_Framework field changes per deal
+      // - cfDiffs:   CashFlow_Chart per-quarter changes (computed below)
+      const diffs = [];     // deal-level (also flows into legacy popup)
+      const gcfDiffs = [];  // GC_Framework field changes
+      const cfDiffs = [];   // CashFlow_Chart row changes
+      const newDeals = [];
+
+      // Watched fields per data source (used for change detection)
+      const INV_FIELDS = ['commitment','funded','unfunded','currentValue','distributions',
+                          'anticipatedValue','expectedMoic','expectedArr','actualMoic',
+                          'dealStatusOpen','horizonYrs','assetClass','account','status',
+                          'sponsor','vehicle','dateCommitted','dateFunded','notes'];
+      const GCF_FIELDS = ['gcScore','rCode','rCodeLabel','convictionTier','confidence',
+                          'portfolioRole','killerRisk','regretVerdict','memoIteration','memoDate'];
+
+      parsed.forEach(p => {
+        // Normalize account
+        if (p.account) p.account = normalizeAccount(p.account);
+        // Numeric coercion — protect against string values like "" coming through as numeric fields
+        ['commitment','funded','unfunded','currentValue','distributions','totalValue',
+         'anticipatedValue','expectedArr','expectedMoic','actualMoic',
+         'lockupYrs','horizonYrs'].forEach(k => {
+          if (p[k] != null && typeof p[k] !== 'number') {
+            const n = Number(p[k]);
+            p[k] = isNaN(n) ? null : n;
+          }
+        });
+
+        // Formula-cell fallback: in v4 trackers, current_value is a formula that defaults
+        // to funded ("=tblInvestments[[#This Row],[Amount Funded ($)]]"). When a tool
+        // re-saves the workbook without recalculating, the cached value is None.
+        // If currentValue is null but funded is set, fall back to funded so totals don't
+        // drop unexpectedly.
+        if ((p.currentValue == null || p.currentValue === 0) && p.funded > 0) {
+          p.currentValue = p.funded;
+        }
+        // Same for unfunded if formula didn't resolve
+        if (p.unfunded == null && p.commitment != null && p.funded != null) {
+          p.unfunded = p.commitment - p.funded;
+        }
+        // Total Value formula: U + V (current_value + distributions)
+        if (p.totalValue == null && (p.currentValue != null || p.distributions != null)) {
+          p.totalValue = (Number(p.currentValue) || 0) + (Number(p.distributions) || 0);
+        }
+        // Anticipated Value formula: commitment × expectedMoic
+        if (p.anticipatedValue == null && p.commitment != null && p.expectedMoic != null) {
+          p.anticipatedValue = Number(p.commitment) * Number(p.expectedMoic);
+        }
+        // Actual MOIC formula: total_value / funded
+        if (p.actualMoic == null && p.totalValue != null && p.funded > 0) {
+          p.actualMoic = Number(p.totalValue) / Number(p.funded);
+        }
+
+        // Apply GC_Framework sheet data on top of the parsed Investments row
+        const gcf = gcfData[p.id] || {};
+        Object.assign(p, gcf);
+
+        // Preserve LOCAL_ONLY_FIELDS from existing entry, and compute diffs
+        const existing = existingById[p.id];
+        if (existing) {
+          LOCAL_ONLY_FIELDS.forEach(f => {
+            if (existing[f] != null && p[f] == null) p[f] = existing[f];
+          });
+
+          // Investments-level changes
+          const invChanges = [];
+          INV_FIELDS.forEach(f => {
+            const oldV = existing[f], newV = p[f];
+            if (!fieldsEqual(oldV, newV)) {
+              invChanges.push({ field: f, old: oldV, new: newV });
+            }
+          });
+
+          // GC_Framework-level changes
+          const gcfChanges = [];
+          GCF_FIELDS.forEach(f => {
+            const oldV = existing[f], newV = p[f];
+            if (!fieldsEqual(oldV, newV)) {
+              gcfChanges.push({ field: f, old: oldV, new: newV });
+            }
+          });
+
+          if (invChanges.length > 0) {
+            diffs.push({ type: 'upd', id: p.id, name: p.name, changes: invChanges });
+          } else {
+            diffs.push({ type: 'same', id: p.id, name: p.name, changes: [] });
+          }
+          if (gcfChanges.length > 0) {
+            gcfDiffs.push({ id: p.id, name: p.name, changes: gcfChanges });
+          }
+        } else {
+          // Brand new deal
+          const newFields = [];
+          if (p.commitment) newFields.push({ field: 'commitment', old: null, new: p.commitment });
+          if (p.assetClass) newFields.push({ field: 'assetClass', old: null, new: p.assetClass });
+          if (p.gcScore != null) newFields.push({ field: 'gcScore', old: null, new: p.gcScore });
+          if (p.rCode) newFields.push({ field: 'rCode', old: null, new: p.rCode });
+          diffs.push({ type: 'add', id: p.id, name: p.name, changes: newFields });
+        }
+
+        newDeals.push(p);
+      });
+
+      // Identify deleted deals (existed before, not in spreadsheet now)
+      const parsedIds = new Set(parsed.map(p => p.id));
+      STATE.deals.forEach(d => {
+        if (!parsedIds.has(d.id)) {
+          diffs.push({ type:'del', id: d.id, name: d.name, changes: [{ field:'_removed', old: d.commitment, new: null }] });
+        }
+      });
+
+      // CashFlow_Chart diffs — compare the new cashflowChart against the previous snapshot
+      const newCashflowMap = {};
+      (cashflowChart || []).forEach(row => { newCashflowMap[row.quarter] = row; });
+      const cfWatched = ['contributions','capitalCalls','distributions','netCashFlow','cumulativeNet'];
+      // Quarters in either snapshot
+      const allQuarters = new Set([...Object.keys(prevCashflowMap), ...Object.keys(newCashflowMap)]);
+      allQuarters.forEach(q => {
+        const oldRow = prevCashflowMap[q];
+        const newRow = newCashflowMap[q];
+        if (oldRow && !newRow) {
+          cfDiffs.push({ type: 'del', quarter: q, changes: [] });
+        } else if (!oldRow && newRow) {
+          const adds = cfWatched
+            .filter(f => newRow[f] != null && newRow[f] !== 0)
+            .map(f => ({ field: f, old: null, new: newRow[f] }));
+          cfDiffs.push({ type: 'add', quarter: q, changes: adds });
+        } else if (oldRow && newRow) {
+          const cs = [];
+          cfWatched.forEach(f => {
+            if (!fieldsEqual(oldRow[f], newRow[f])) {
+              cs.push({ field: f, old: oldRow[f], new: newRow[f] });
+            }
+          });
+          if (cs.length > 0) cfDiffs.push({ type: 'upd', quarter: q, changes: cs });
+        }
+      });
+
+      // REPLACE STATE.deals entirely — spreadsheet wins, no stale data, deleted rows gone
+      STATE.deals = newDeals;
+
+      STATE.meta.lastSync = new Date().toISOString();
+      STATE.meta.syncSource = file.name;
+      saveState();
+      renderAll();
+      showSyncResult({ dealDiffs: diffs, gcfDiffs, cfDiffs }, parsed.length);
+    } catch (err) {
+      alert('Parse error: ' + err.message);
+      console.error(err);
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showSyncResult(payload, total) {
+  const { dealDiffs, gcfDiffs, cfDiffs } = payload;
+  const added = dealDiffs.filter(d => d.type === 'add').length;
+  const updated = dealDiffs.filter(d => d.type === 'upd').length;
+  const deleted = dealDiffs.filter(d => d.type === 'del').length;
+  const unchanged = dealDiffs.filter(d => d.type === 'same').length;
+
+  // Summary stats — what changed in aggregate
+  const fmtDelta = (n) => {
+    if (n == null || n === 0) return null;
+    const abs = Math.abs(n);
+    const sign = n > 0 ? '+' : '−';
+    if (abs >= 1000000) return `${sign}$${(abs/1000000).toFixed(1)}M`;
+    if (abs >= 1000) return `${sign}$${Math.round(abs/1000)}k`;
+    return `${sign}$${abs}`;
+  };
+  // Roll up commit/funded/dist deltas across all upd+add+del
+  let commitDelta = 0, fundedDelta = 0, distDelta = 0, currentDelta = 0;
+  dealDiffs.forEach(d => {
+    if (d.type === 'add') {
+      d.changes.forEach(c => {
+        if (c.field === 'commitment' && c.new) commitDelta += c.new;
+      });
+    } else if (d.type === 'del') {
+      d.changes.forEach(c => {
+        if (c.field === '_removed' && c.old) commitDelta -= c.old;
+      });
+    } else if (d.type === 'upd') {
+      d.changes.forEach(c => {
+        const oldN = Number(c.old) || 0, newN = Number(c.new) || 0;
+        if (c.field === 'commitment') commitDelta += (newN - oldN);
+        if (c.field === 'funded') fundedDelta += (newN - oldN);
+        if (c.field === 'distributions') distDelta += (newN - oldN);
+        if (c.field === 'currentValue') currentDelta += (newN - oldN);
+      });
+    }
+  });
+  const summaryParts = [];
+  if (fmtDelta(commitDelta)) summaryParts.push(`<span style="color:var(--p)">Net committed ${fmtDelta(commitDelta)}</span>`);
+  if (fmtDelta(fundedDelta)) summaryParts.push(`<span style="color:var(--p)">Funded ${fmtDelta(fundedDelta)}</span>`);
+  if (fmtDelta(currentDelta)) summaryParts.push(`<span style="color:var(--p)">Current Value ${fmtDelta(currentDelta)}</span>`);
+  if (fmtDelta(distDelta)) summaryParts.push(`<span style="color:var(--p)">Distributions ${fmtDelta(distDelta)}</span>`);
+  if (cfDiffs.length > 0) {
+    const cfQs = cfDiffs.length;
+    summaryParts.push(`<span style="color:var(--p)">${cfQs} cashflow quarter${cfQs > 1 ? 's' : ''} changed</span>`);
+  }
+  if (gcfDiffs.length > 0) {
+    summaryParts.push(`<span style="color:var(--p)">${gcfDiffs.length} GC_Framework deal${gcfDiffs.length > 1 ? 's' : ''} updated</span>`);
+  }
+
+  const fmtFieldVal = (v) => {
+    if (v == null) return '<em style="color:var(--m)">empty</em>';
+    if (typeof v === 'number') {
+      if (Math.abs(v) >= 1000) return `$${v.toLocaleString()}`;
+      return String(v);
+    }
+    if (typeof v === 'string' && v.length > 60) return v.slice(0, 57) + '…';
+    return String(v);
+  };
+  const fmtFieldName = (f) => {
+    const labels = {
+      commitment: 'Commitment', funded: 'Funded', unfunded: 'Unfunded',
+      currentValue: 'Current Value', distributions: 'Distributions',
+      anticipatedValue: 'Anticipated Value', expectedMoic: 'Expected MOIC',
+      expectedArr: 'Expected ARR', actualMoic: 'Actual MOIC',
+      dealStatusOpen: 'Deal Status', horizonYrs: 'Target Horizon',
+      assetClass: 'Asset Class', account: 'Account', sponsor: 'Sponsor',
+      vehicle: 'Vehicle', dateCommitted: 'Date Committed', dateFunded: 'Date Funded',
+      notes: 'Notes', status: 'Status',
+      gcScore: 'GC Score', rCode: 'R-Code', rCodeLabel: 'R-Code Label',
+      convictionTier: 'Conviction Tier', confidence: 'Confidence',
+      portfolioRole: 'Portfolio Role', killerRisk: 'Killer Risk',
+      regretVerdict: 'Regret Resistant', memoIteration: 'Memo Iteration',
+      memoDate: 'Memo Date',
+      contributions: 'Contributions', capitalCalls: 'Capital Calls',
+      netCashFlow: 'Net Cash Flow', cumulativeNet: 'Cumulative Net',
+    };
+    return labels[f] || f;
+  };
+
+  const renderChangeList = (changes) => changes.map(c =>
+    `<div class="diff-change">${fmtFieldName(c.field)}: ${fmtFieldVal(c.old)} → <strong>${fmtFieldVal(c.new)}</strong></div>`
+  ).join('');
+
+  // Build sections
+  let html = `
+    <div style="margin:14px 0 8px;font-size:12px;font-weight:700;color:var(--amberL)">
+      ✓ Sync complete: ${total} row${total !== 1 ? 's' : ''} processed
+    </div>
+    <div style="font-size:11px;color:var(--s);margin-bottom:6px">
+      <strong style="color:var(--greenL)">${added} added</strong> ·
+      <strong style="color:var(--blueL)">${updated} updated</strong> ·
+      <strong style="color:var(--redL)">${deleted} deleted</strong> ·
+      <span style="color:var(--m)">${unchanged} unchanged</span>
+    </div>`;
+
+  if (summaryParts.length > 0) {
+    html += `<div style="font-size:11px;color:var(--s);margin-bottom:14px;padding:8px 10px;background:rgba(217,119,6,0.06);border-left:2px solid var(--amberL);border-radius:4px">
+      ${summaryParts.join(' · ')}
+    </div>`;
+  }
+
+  // ─── Investments-level changes ───
+  const dealChangedRows = dealDiffs.filter(d => d.type !== 'same');
+  if (dealChangedRows.length > 0) {
+    html += `<div class="diff-section-h">DEAL CHANGES (Investments sheet)</div>`;
+    html += dealChangedRows.map(d => {
+      const icon = d.type === 'add' ? '＋' : d.type === 'del' ? '✕' : '⟳';
+      const cls = d.type;
+      let changesHtml = '';
+      if (d.type === 'del') {
+        changesHtml = `<div class="diff-change">Deal removed from spreadsheet</div>`;
+      } else if (d.changes.length === 0) {
+        changesHtml = `<div class="diff-change" style="color:var(--m)">no field changes</div>`;
+      } else {
+        changesHtml = renderChangeList(d.changes);
+      }
+      return `<div class="diff-row ${cls}">
+        <div class="diff-row-h">${icon} ${d.name} <span class="diff-id">(${d.id})</span></div>
+        ${changesHtml}
+      </div>`;
+    }).join('');
+  }
+
+  // ─── GC_Framework changes ───
+  if (gcfDiffs.length > 0) {
+    html += `<div class="diff-section-h">GC_FRAMEWORK CHANGES</div>`;
+    html += gcfDiffs.map(g =>
+      `<div class="diff-row upd">
+        <div class="diff-row-h">⟳ ${g.name} <span class="diff-id">(${g.id})</span></div>
+        ${renderChangeList(g.changes)}
+      </div>`
+    ).join('');
+  }
+
+  // ─── CashFlow_Chart changes ───
+  if (cfDiffs.length > 0) {
+    html += `<div class="diff-section-h">CASHFLOW CHART CHANGES</div>`;
+    html += cfDiffs.map(c => {
+      const icon = c.type === 'add' ? '＋' : c.type === 'del' ? '✕' : '⟳';
+      const cls = c.type;
+      let changesHtml = '';
+      if (c.type === 'del') {
+        changesHtml = `<div class="diff-change">Quarter row removed from sheet</div>`;
+      } else {
+        changesHtml = renderChangeList(c.changes);
+      }
+      return `<div class="diff-row ${cls}">
+        <div class="diff-row-h">${icon} ${c.quarter}</div>
+        ${changesHtml}
+      </div>`;
+    }).join('');
+  }
+
+  if (dealChangedRows.length === 0 && gcfDiffs.length === 0 && cfDiffs.length === 0) {
+    html += `<div style="margin:20px 0;padding:14px;background:rgba(217,119,6,0.06);border-radius:6px;font-size:11px;color:var(--s);text-align:center">
+      No changes detected. The dashboard already reflects this spreadsheet.
+    </div>`;
+  }
+
+  html += `<div style="margin-top:16px;padding:10px 12px;background:rgba(5,150,105,0.08);border-radius:6px;font-size:11px;color:var(--greenL)">
+    ✓ GC framework memo fields (return drivers, follow-ups, conviction breakdown, capital destruction scenarios, regret checks) preserved on all updated deals.
+  </div>`;
+
+  document.getElementById('syncResult').innerHTML = html;
+  toast(`⟲ Synced ${total} deals`);
+}
+
+// ============================================================
+// FILE DROP WIRING
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  // Wire both drop zones: the modal one (existing #drop) and the empty-state one (#dropZoneMain)
+  function wireDropZone(dropEl, inputEl) {
+    if (!dropEl || !inputEl) return;
+    ['dragenter','dragover'].forEach(e => dropEl.addEventListener(e, (ev) => { ev.preventDefault(); dropEl.classList.add('over'); }));
+    ['dragleave','drop'].forEach(e => dropEl.addEventListener(e, (ev) => { ev.preventDefault(); dropEl.classList.remove('over'); }));
+    dropEl.addEventListener('drop', (e) => {
+      const f = e.dataTransfer.files[0];
+      if (f) handleFile(f);
+    });
+    inputEl.addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      if (f) handleFile(f);
+    });
+  }
+  wireDropZone(document.getElementById('drop'), document.getElementById('fileInput'));
+  wireDropZone(document.getElementById('dropZoneMain'), document.getElementById('fileInputMain'));
+
+  // Close modals on bg click
+  document.querySelectorAll('.modal-bg').forEach(m => {
+    m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); });
+  });
+
+  // Fire-and-forget version check; never blocks rendering, fails silently if offline
+  checkForUpdates();
+});
+
+// ============================================================
+// ALL RENDER
+// ============================================================
+function renderAll() {
+  const empty = document.getElementById('emptyState');
+  const dash = document.getElementById('dashboard');
+  if (!STATE.deals || STATE.deals.length === 0) {
+    if (empty) empty.style.display = '';
+    if (dash) dash.style.display = 'none';
+    document.getElementById('syncStatus').textContent = '○ NO DATA — drop tracker to begin';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+  if (dash) dash.style.display = '';
+  renderKPIs();
+  renderFlags();
+  renderAlloc();
+  renderRCode();
+  renderLadder();
+  renderCashflow();
+  renderGroups();
+  const st = STATE.meta.lastSync
+    ? `⚡ SYNCED ${new Date(STATE.meta.lastSync).toLocaleDateString()} · ${STATE.meta.syncSource || 'manual'}`
+    : `◆ ${STATE.deals.length} DEAL${STATE.deals.length>1?'S':''} · BROWSER STATE`;
+  document.getElementById('syncStatus').textContent = st;
+}
+
+// ============================================================
+// BOOT
+// ============================================================
+(async () => {
+  await loadState();
+  renderAll();
+})();
+</script>
+</body>
+</html>

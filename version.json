@@ -1,0 +1,15 @@
+{
+  "_comment": "Single source of truth for current version numbers. Do not edit manually — use ./publish.sh.",
+  "dashboard": "1.0.0",
+  "dashboard_url": "https://YOUR_GH_USERNAME.github.io/growth-circle-dashboard/",
+  "dashboard_note": "initial release",
+
+  "tracker": "5.3",
+  "tracker_url": "https://YOUR_GH_USERNAME.github.io/growth-circle-dashboard/releases/GC_Investment_Tracker_v5.3.xlsx",
+  "tracker_note": "v5.3 — fixes circular reference, locks all derived sheets, formula consistency",
+
+  "offline_bundle_url": "https://YOUR_GH_USERNAME.github.io/growth-circle-dashboard/releases/GC_Private_Markets_Dashboard.zip",
+  "guide_url": "https://YOUR_GH_USERNAME.github.io/growth-circle-dashboard/releases/SETUP_GUIDE.docx",
+
+  "released_at": "2026-04-28"
+}
