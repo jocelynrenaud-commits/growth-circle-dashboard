@@ -20,7 +20,7 @@
 set -euo pipefail
 
 # ─────────── CONFIG ───────────
-USERNAME="YOUR_GH_USERNAME"     # set me — your GitHub username
+USERNAME="jocelynrenaud-commits"     # set me — your GitHub username
 REPO="growth-circle-dashboard"  # the repo name
 # ──────────────────────────────
 
