@@ -13,6 +13,8 @@ An institutional-grade dashboard for surveying private deal commitments across t
 
 That's it. Your dashboard renders. Your data stays on your computer.
 
+**Using Google Sheets instead of Excel?** The tracker works in Google Sheets, but the dropdown menus on the Investments tab may not import correctly — Google Sheets doesn't fully preserve Excel's cross-sheet data validation. This is purely cosmetic. The dashboard reads cell values, not dropdown selections, so just type values directly (e.g., "Real Estate" in the Asset Class column) and everything will render correctly when you upload.
+
 ## Privacy
 
 Your spreadsheet data **never leaves your computer**. The dashboard runs entirely in your browser — there is no server-side code processing your data. The GitHub Pages server only serves static HTML, CSS, and JavaScript files. Verify yourself: open browser DevTools → Network tab → drag a spreadsheet onto the page → confirm zero outbound requests carrying spreadsheet data.
