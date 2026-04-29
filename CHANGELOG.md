@@ -12,6 +12,17 @@ Things being worked on — not yet shipped.
 
 ---
 
+## Dashboard 1.0.1 — 2026-04-28
+
+Small but meaningful improvements for support and tracking.
+
+### Dashboard (index.html)
+- **Visible version label in header**: a small grey `v1.0.1` badge now appears in the top-right header next to the sync status. Users can copy this string when reporting issues, so we always know which build they're running. Reads as part of the system-state cluster (sync state + version) and captures cleanly in screenshots.
+- **Version-tracking infrastructure in source**: the file now opens with a comment block listing the current version, release date, tracker schema, and the most recent versions. Future-self can glance at the file header and immediately know what's deployed.
+- **Empty-state copy refinement**: changed "Sync Your Tracker to Begin" to "Drop Your Tracker File to Begin." Earlier feedback indicated "sync" terminology was confusing — the new copy mirrors the action the user actually performs.
+
+---
+
 ## Tracker 5.3 — 2026-04-28
 
 Bug fixes and protection lockdown based on user testing.

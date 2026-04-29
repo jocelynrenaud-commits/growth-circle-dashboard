@@ -1,4 +1,16 @@
 <!DOCTYPE html>
+<!--
+  ═══════════════════════════════════════════════════════════════════
+  GC PRIVATE MARKETS DASHBOARD
+  ═══════════════════════════════════════════════════════════════════
+  Current version: 1.0.1  (released 2026-04-28)
+  Tracker schema:  5.3
+
+  Recent versions (full history in CHANGELOG.md):
+    1.0.1  2026-04-28  Add visible version label in header; version-tracking infra; empty-state copy refinement
+    1.0.0  2026-04-28  Initial public release on GitHub Pages
+  ═══════════════════════════════════════════════════════════════════
+-->
 <html lang="en">
 <head>
 <meta charset="UTF-8" />
@@ -59,6 +71,15 @@
   .hdr-title { font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
   .hdr-sub { font-size: 10px; letter-spacing: 0.12em; color: var(--amberL); margin-top: 2px; font-family: var(--mono); }
   .hdr-r { display:flex; align-items:center; gap: 10px; font-family: var(--mono); font-size: 10px; color: var(--s); letter-spacing: 0.08em; }
+  .version-label {
+    /* Tiny faded version badge, copy-pasteable, captures cleanly in screenshots.
+       Sits next to the sync status indicator. Reads as part of the system-state cluster. */
+    font-family: var(--mono); font-size: 10px; color: var(--m);
+    letter-spacing: 0.06em; padding: 2px 7px;
+    border: 1px solid var(--bdr); border-radius: 4px;
+    background: var(--surf); user-select: text;
+  }
+  .version-label:empty { display: none; }
 
   .btn {
     padding: 8px 14px; border-radius: 7px; font-size: 12px; font-weight: 600;
@@ -461,6 +482,7 @@
     </div>
     <div class="hdr-r">
       <span id="syncStatus">○ NOT SYNCED</span>
+      <span id="versionLabel" class="version-label" title="Dashboard version — share this when reporting issues"></span>
       <button class="btn btn-sm" onclick="openModal('sync')">⟲ Sync Tracker</button>
     </div>
   </div>
@@ -468,7 +490,7 @@
   <!-- EMPTY STATE — shown when no deals are loaded -->
   <div id="emptyState" class="empty-landing">
     <div class="empty-icon">↓</div>
-    <div class="empty-headline">Sync Your Tracker to Begin</div>
+    <div class="empty-headline">Drop Your Tracker File to Begin</div>
     <div class="empty-body">
       Drop your <strong>GC_Investment_Tracker.xlsx</strong> file below, or click to browse. The dashboard will populate from your Investments, GC_Framework, and CashFlow_Chart sheets.
     </div>
@@ -605,7 +627,7 @@ const STORE = {
 // All data flow stays local. The version check is a single GET request for a
 // tiny JSON file; it sends no spreadsheet data, no analytics, no tracking.
 const VERSION = {
-  dashboard: '1.0.0',  // bumped by publish.sh
+  dashboard: '1.0.1',  // bumped by publish.sh — matches the comment block at top of file
   tracker: '5.3',      // current tracker template version
   // Hosting URL for version.json. Set to '' to disable update checks entirely.
   // Replace 'YOUR_GH_USERNAME' below after you've created the repo.
@@ -2233,6 +2255,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.querySelectorAll('.modal-bg').forEach(m => {
     m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('open'); });
   });
+
+  // Populate the visible version label in the header from the VERSION constant.
+  // Single source of truth: VERSION.dashboard. Users can copy this string when
+  // reporting issues so we know what build they're running.
+  const versionEl = document.getElementById('versionLabel');
+  if (versionEl) versionEl.textContent = 'v' + VERSION.dashboard;
 
   // Fire-and-forget version check; never blocks rendering, fails silently if offline
   checkForUpdates();

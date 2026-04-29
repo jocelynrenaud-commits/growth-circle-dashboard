@@ -1,8 +1,8 @@
 {
   "_comment": "Single source of truth for current version numbers. Do not edit manually — use ./publish.sh.",
-  "dashboard": "1.0.0",
+  "dashboard": "1.0.1",
   "dashboard_url": "https://jocelynrenaud-commits.github.io/growth-circle-dashboard/",
-  "dashboard_note": "initial release",
+  "dashboard_note": "Adds visible version label in header for support tracking; refines empty-state copy",
 
   "tracker": "5.3",
   "tracker_url": "https://jocelynrenaud-commits.github.io/growth-circle-dashboard/releases/GC_Investment_Tracker_v5.3.xlsx",
